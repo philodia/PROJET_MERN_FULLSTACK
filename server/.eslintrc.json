@@ -1,0 +1,49 @@
+{
+  "env": {
+    "node": true,
+    "es2023": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:node/recommended",
+    "plugin:prettier/recommended" // Prettier DOIT ÊTRE LE DERNIER dans extends
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "plugins": [
+    "node",
+    "prettier" // Ajouter prettier ici
+  ],
+  "rules": {
+    // Règle pour Prettier (elle signale les différences de formatage comme des erreurs/avertissements ESLint)
+    "prettier/prettier": "warn", // Vous pouvez mettre "error" pour une application plus stricte
+
+    // --- Vos règles de qualité du code qui ne sont PAS gérées par Prettier ---
+    "no-console": "warn",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+
+    // --- Règles Node.js que vous pourriez ajuster ---
+    "node/no-unpublished-import": "off",
+    "node/no-extraneous-import": ["error", {
+      "allowModules": []
+    }],
+    "node/no-missing-import": ["error", {
+      "tryExtensions": [".js", ".json", ".node"]
+    }],
+    "node/shebang": "off", // Souvent non nécessaire
+
+    // --- Autres règles de qualité du code ---
+    "consistent-return": "warn",
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    // "no-undef": "error", // Déjà couvert par eslint:recommended
+    "no-process-exit": "off"
+
+    // --- Les règles de style comme "indent", "quotes", "semi" sont inutiles ici ---
+    // --- car Prettier s'en charge. Les garder pourrait entrer en conflit.   ---
+
+    // "promise/always-return": "warn",
+    // "promise/catch-or-return": "warn"
+  }
+}
