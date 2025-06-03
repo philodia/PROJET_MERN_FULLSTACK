@@ -1,21 +1,28 @@
 {
-  "name": "mern-commercial-accounting",
+  "name": "projet_mern_fullstack",
   "version": "1.0.0",
-  "description": "Application de Gestion Commerciale & Comptable",
-  "main": "index.js", 
+  "main": "index.js",
   "scripts": {
     "server": "npm run server --prefix server",
     "client": "npm start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-backend": "npm install --prefix backend",
-    "install-frontend": "npm install --prefix frontend",
-    "install-all": "npm install && npm run install-backend && npm run install-frontend",
-    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix frontend && npm run build --prefix frontend" 
+    "dev": "concurrently \"npm run server\" \"npm run client\""
   },
-  "keywords": ["mern", "accounting", "crm"],
-  "author": "Votre Nom",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/philodia/PROJET_MERN_FULLSTACK.git"
+  },
+  "keywords": [],
+  "author": "Libasse Dia /LibDev_Prod",
   "license": "ISC",
-  "devDependencies": {
+  "bugs": {
+    "url": "https://github.com/philodia/PROJET_MERN_FULLSTACK/issues"
+  },
+  "homepage": "https://github.com/philodia/PROJET_MERN_FULLSTACK#readme",
+  "description": "",
+  "dependencies": {
     "concurrently": "^9.1.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
   }
 }

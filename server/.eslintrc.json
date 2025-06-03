@@ -1,49 +1,48 @@
 {
   "env": {
+    "commonjs": true,
+    "es2021": true,
     "node": true,
-    "es2023": true
+    "jest": true // Ajoutez ceci si vous prévoyez d'utiliser Jest pour les tests
   },
   "extends": [
     "eslint:recommended",
-    "plugin:node/recommended",
-    "plugin:prettier/recommended" // Prettier DOIT ÊTRE LE DERNIER dans extends
+    "plugin:node/recommended", // Règles spécifiques à Node.js
+    "prettier" // Assurez-vous que ceci est le dernier pour désactiver les règles ESLint conflictuelles avec Prettier
+  ],
+  "plugins": [
+    "prettier" // Permet à ESLint de signaler les problèmes de formatage comme des erreurs Prettier
   ],
   "parserOptions": {
-    "ecmaVersion": "latest",
-    "sourceType": "module"
+    "ecmaVersion": "latest" // ou 12, 2021, etc., selon votre version de Node.js
   },
-  "plugins": [
-    "node",
-    "prettier" // Ajouter prettier ici
-  ],
   "rules": {
-    // Règle pour Prettier (elle signale les différences de formatage comme des erreurs/avertissements ESLint)
-    "prettier/prettier": "warn", // Vous pouvez mettre "error" pour une application plus stricte
-
-    // --- Vos règles de qualité du code qui ne sont PAS gérées par Prettier ---
-    "no-console": "warn",
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-
-    // --- Règles Node.js que vous pourriez ajuster ---
-    "node/no-unpublished-import": "off",
-    "node/no-extraneous-import": ["error", {
-      "allowModules": []
+    "prettier/prettier": "warn", // Affiche les problèmes Prettier comme des avertissements (ou "error" pour les traiter comme des erreurs)
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }], // Avertit sur les variables non utilisées, sauf si elles commencent par _
+    "no-console": "off", // Permet l'utilisation de console.log en développement (vous pouvez le mettre sur "warn" ou "error" en production)
+    "node/no-unsupported-features/es-syntax": ["error", {
+      "version": ">=14.0.0", // Ajustez à la version minimale de Node.js que vous supportez
+      "ignores": []
     }],
-    "node/no-missing-import": ["error", {
-      "tryExtensions": [".js", ".json", ".node"]
-    }],
-    "node/shebang": "off", // Souvent non nécessaire
-
-    // --- Autres règles de qualité du code ---
-    "consistent-return": "warn",
-    "eqeqeq": ["error", "always", { "null": "ignore" }],
-    // "no-undef": "error", // Déjà couvert par eslint:recommended
-    "no-process-exit": "off"
-
-    // --- Les règles de style comme "indent", "quotes", "semi" sont inutiles ici ---
-    // --- car Prettier s'en charge. Les garder pourrait entrer en conflit.   ---
-
-    // "promise/always-return": "warn",
-    // "promise/catch-or-return": "warn"
+    "node/no-missing-require": "off", // Peut être désactivé si vous utilisez des chemins absolus ou des alias
+    "node/no-unpublished-require": "off", // Utile si vous avez des scripts locaux
+    "consistent-return": "warn", // Recommande de toujours retourner une valeur ou undefined explicitement
+    "eqeqeq": ["error", "always"], // Force l'utilisation de === et !==
+    "curly": ["error", "all"], // Force les accolades pour tous les blocs (if, else, for, while)
+    "no-process-exit": "off" // Permet process.exit(), utile dans certains scripts ou pour la gestion d'erreurs critiques
+    // Ajoutez d'autres règles personnalisées ici selon vos préférences
+  },
+  "settings": {
+    // Si vous utilisez des alias de chemin (ex: avec module-alias)
+    // "import/resolver": {
+    //   "alias": {
+    //     "map": [
+    //       ["@config", "./config"],
+    //       ["@controllers", "./controllers"],
+    //       ["@models", "./models"]
+    //     ],
+    //     "extensions": [".js"]
+    //   }
+    // }
   }
 }

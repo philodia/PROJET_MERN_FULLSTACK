@@ -1,4 +1,75 @@
-# .gitignore
+# Fichier .gitignore pour le backend Node.js/Express
+
+# Dépendances Node
 node_modules/
+
+# Fichiers d'environnement
+# Ne jamais commiter le fichier .env réel contenant des secrets.
+# Commiter .env.example pour montrer les variables nécessaires.
 .env
-*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Fichiers de configuration d'IDE et de système d'exploitation
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+*.DS_Store
+Thumbs.db
+
+# Fichiers de build/distribution (si applicable au backend, ex: TypeScript build)
+dist/
+build/
+out/
+
+# Fichiers de couverture de tests
+coverage/
+.nyc_output/
+
+# Fichiers temporaires ou de cache
+.cache/
+tmp/
+
+# Fichiers spécifiques à des outils (exemples)
+# PM2
+pm2.pid
+pm2.config.js # Si vous ne voulez pas commiter votre config PM2 avec des chemins spécifiques
+
+# Bases de données locales (si vous en utilisez directement, ex: SQLite)
+# *.sqlite
+# *.sqlite3
+
+# Fichiers de secrets ou de clés (si vous en générez localement et ne doivent pas être commis)
+# private.key
+# public.key
+# *.pem
+
+# Fichiers d'archives
+*.zip
+*.tar.gz
+
+# Rapports d'erreurs
+*.dump
+
+# Variables d'environnement spécifiques à Nodemon (si vous les mettez dans un fichier séparé)
+# nodemon.json # Peut contenir des variables d'environnement, à évaluer si vous le commitez ou non.
+
+# Si vous utilisez des outils comme `pkg` pour créer des exécutables
+# *.exe
+# *.pkg

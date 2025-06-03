@@ -1,18 +1,16 @@
 {
-  "name": "backend",
+  "name": "server",
   "version": "1.0.0",
-  "description": "Backend pour l'application de gestion commerciale et comptable",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "node server.js",
     "server": "nodemon server.js",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Libasse Dia /LibDev_Prod",
   "license": "ISC",
+  "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "colors": "^1.4.0",
@@ -21,10 +19,14 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.15.1"
+    "mongoose": "^8.15.1",
+    "morgan": "^1.10.0",
+    "pdfkit": "^0.17.1",
+    "socket.io": "^4.8.1",
+    "ssh2-sftp-client": "^12.0.0",
+    "validator": "^13.15.15"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-node": "^11.1.0",

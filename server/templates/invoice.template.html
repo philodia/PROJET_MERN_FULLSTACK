@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-F-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture {{invoiceNumber}}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #fdfdfd;
+        }
+        .container {
+            width: 800px;
+            margin: 20px auto;
+            padding: 30px;
+            border: 1px solid #eee;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header .company-logo img {
+            max-width: 150px;
+            max-height: 70px;
+        }
+        .header .company-details {
+            text-align: right;
+        }
+        .company-details h1 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            color: #222;
+        }
+        .company-details p {
+            margin: 0;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .invoice-details .client-info,
+        .invoice-details .invoice-meta {
+            width: 48%;
+        }
+        .invoice-details h2 {
+            font-size: 16px;
+            margin: 0 0 10px 0;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .invoice-meta p, .client-info p {
+            margin: 2px 0;
+        }
+        .invoice-meta strong, .client-info strong {
+            display: inline-block;
+            width: 120px; /* Adjust as needed */
+        }
+
+        table.items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        table.items-table th, table.items-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        table.items-table th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+        table.items-table td.description {
+            width: 45%;
+        }
+        table.items-table td.quantity,
+        table.items-table td.unit-price,
+        table.items-table td.vat-rate {
+            text-align: right;
+            width: 10%;
+        }
+        table.items-table td.total {
+            text-align: right;
+            width: 15%;
+        }
+        .totals {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .totals table {
+            width: 300px; /* Adjust as needed */
+            margin-left: auto;
+            border-collapse: collapse;
+        }
+        .totals td {
+            padding: 5px 10px;
+        }
+        .totals tr.grand-total td {
+            font-size: 16px;
+            font-weight: bold;
+            border-top: 2px solid #333;
+            padding-top: 10px;
+        }
+        .footer-notes {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 11px;
+        }
+        .footer-notes p {
+            margin: 5px 0;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-bold {
+            font-weight: bold;
+        }
+        .small-text {
+            font-size: 0.9em;
+        }
+        /* For print */
+        @media print {
+            body {
+                background-color: #fff;
+                -webkit-print-color-adjust: exact; /* Chrome, Safari */
+                color-adjust: exact; /* Firefox */
+            }
+            .container {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .header, .footer-notes {
+                border-color: #ccc;
+            }
+            /* Hide elements not for print if any */
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="company-logo">
+                <!-- Remplacer par le vrai chemin du logo ou l'image en base64 -->
+                {{#if company.logoPath}}
+                    <img src="{{company.logoPath}}" alt="Logo de l'entreprise">
+                {{else}}
+                    <!-- Placeholder si pas de logo -->
+                {{/if}}
+            </div>
+            <div class="company-details">
+                <h1>{{company.name}}</h1>
+                <p>{{company.address.street}}</p>
+                <p>{{company.address.zipCode}} {{company.address.city}}</p>
+                <p>{{company.address.country}}</p>
+                {{#if company.phone}}<p>Tél : {{company.phone}}</p>{{/if}}
+                {{#if company.email}}<p>Email : {{company.email}}</p>{{/if}}
+            </div>
+        </header>
+
+        <section class="invoice-details">
+            <div class="client-info">
+                <h2>Facturé à :</h2>
+                <p class="text-bold">{{client.companyName}}</p>
+                {{#if client.contactName}}<p>{{client.contactName}}</p>{{/if}}
+                <p>{{client.address.street}}</p>
+                <p>{{client.address.zipCode}} {{client.address.city}}</p>
+                <p>{{client.address.country}}</p>
+                {{#if client.email}}<p>Email: {{client.email}}</p>{{/if}}
+                {{#if client.phone}}<p>Tél: {{client.phone}}</p>{{/if}}
+            </div>
+            <div class="invoice-meta">
+                <h2>Facture N° {{invoiceNumber}}</h2>
+                <p><strong>Date d'émission :</strong> {{formatDate issueDate}}</p>
+                <p><strong>Date d'échéance :</strong> {{formatDate dueDate}}</p>
+                {{#if company.siren}}<p><strong>SIREN :</strong> {{company.siren}}</p>{{/if}}
+                {{#if company.vatNumber}}<p><strong>N° TVA Intra. :</strong> {{company.vatNumber}}</p>{{/if}}
+                {{#if reference}}<p><strong>Référence :</strong> {{reference}}</p>{{/if}}
+            </div>
+        </section>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th class="description">Description</th>
+                    <th class="quantity">Qté</th>
+                    <th class="unit-price">Prix U. HT</th>
+                    <th class="vat-rate">TVA (%)</th>
+                    <th class="total">Total HT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                <tr>
+                    <td class="description">
+                        {{this.description}}
+                        {{#if this.product.name}}<span class="small-text text-muted"> (Produit: {{this.product.name}})</span>{{/if}}
+                    </td>
+                    <td class="quantity">{{this.quantity}}</td>
+                    <td class="unit-price">{{formatCurrency this.unitPriceHT ../currencySymbol}}</td>
+                    <td class="vat-rate">{{this.vatRate}}%</td>
+                    <td class="total">{{formatCurrency this.totalHT ../currencySymbol}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <section class="totals">
+            <table>
+                <tr>
+                    <td>Total HT :</td>
+                    <td class="text-right">{{formatCurrency totalHT currencySymbol}}</td>
+                </tr>
+                <tr>
+                    <td>Total TVA :</td>
+                    <td class="text-right">{{formatCurrency totalVAT currencySymbol}}</td>
+                </tr>
+                <tr class="grand-total">
+                    <td>Total TTC :</td>
+                    <td class="text-right">{{formatCurrency totalTTC currencySymbol}}</td>
+                </tr>
+            </table>
+        </section>
+
+        <footer class="footer-notes">
+            {{#if notes}}
+                <p class="text-bold">Notes :</p>
+                <p>{{nl2br notes}}</p> <!-- nl2br est un helper à implémenter pour convertir les sauts de ligne -->
+            {{/if}}
+            <p>Conditions de paiement : {{paymentTerms}}.</p>
+            {{#if company.bankDetails}}
+                <p class="text-bold">Coordonnées bancaires :</p>
+                <p>IBAN : {{company.bankDetails.iban}} - BIC/SWIFT : {{company.bankDetails.bic}}</p>
+                <p>Banque : {{company.bankDetails.bankName}}</p>
+            {{/if}}
+            <p style="text-align: center; margin-top: 20px;">Merci de votre confiance !</p>
+            {{#if company.legalFooter}}
+                <p style="text-align: center; font-size: 10px; color: #777; margin-top: 15px;">
+                    {{company.legalFooter}} <!-- Ex: SARL au capital de X €, RCS Ville XXXXXXXX -->
+                </p>
+            {{/if}}
+        </footer>
+    </div>
+</body>
+</html>
