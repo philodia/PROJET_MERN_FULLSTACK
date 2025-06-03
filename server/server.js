@@ -56,6 +56,9 @@ if (config.NODE_ENV === 'development') {
     app.use(morgan('short')); // Ou un format plus concis pour la console en prod
 }
 
+app.set('trust proxy', 1); // Ou le nombre de proxies, ou une fonction de confiance
+// Maintenant req.ip devrait donner l'IP réelle du client.
+
 // --- Routes de l'API ---
 // Route de test simple
 app.get('/api/health', (req, res) => {
