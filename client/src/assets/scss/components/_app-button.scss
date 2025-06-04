@@ -1,0 +1,26 @@
+/* frontend/src/assets/scss/components/_app-button.scss ou similaire */
+.app-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-button .app-button-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-button .app-button-icon-left {
+  margin-right: 0.5em; /* Espace entre l'icône et le texte */
+}
+
+.app-button .app-button-icon-right {
+  margin-left: 0.5em; /* Espace entre le texte et l'icône */
+}
+
+/* Optionnel: ajuster l'apparence quand il est en chargement */
+.app-button.app-button-loading {
+  /* Vous pouvez ajouter des styles spécifiques ici si besoin,
+     par exemple, pour changer légèrement l'opacité du texte
+     ou s'assurer que le spinner est bien aligné. */
+}

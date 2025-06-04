@@ -1,0 +1,69 @@
+// frontend/src/components/dashboard/StatCard.scss
+
+.stat-card {
+  border: none; // Enlever la bordure par défaut si shadow-sm est utilisé
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+
+  &.stat-card-linkable {
+    cursor: pointer;
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--bs-card-box-shadow), 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important; // Renforcer l'ombre au survol
+    }
+  }
+
+  .card-body {
+    // S'assurer que le body de la carte prend toute la hauteur si la carte est dans une grille
+    // et que le footer est bien en bas.
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; // Pousse le footer en bas s'il y en a un
+  }
+
+  .stat-card-title {
+    // Styles pour le titre de la carte
+    font-weight: 500;
+  }
+
+  .stat-card-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; // Empêche l'icône de rétrécir
+  }
+
+  .stat-card-value {
+    font-weight: 600;
+    color: var(--bs-body-color);
+  }
+
+  .stat-card-unit {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--bs-secondary);
+  }
+
+  .stat-card-trend {
+    font-size: 0.85em;
+    display: block; // Pour qu'il soit sur sa propre ligne
+  }
+
+  .stat-card-footer {
+    border-top: 1px solid var(--bs-card-border-color, rgba(0,0,0,.125));
+    padding-top: 0.75rem;
+    margin-top: 0.75rem; // Pour espacer du contenu principal si pas de tendance
+    font-size: 0.8rem;
+
+    a, .text-muted { // Si le footerText est un lien ou juste du texte
+        text-decoration: none;
+        color: var(--bs-secondary) !important; // Assurer la couleur
+        &:hover {
+            text-decoration: underline;
+            color: var(--bs-primary) !important;
+        }
+    }
+  }
+}

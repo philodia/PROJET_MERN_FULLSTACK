@@ -1,0 +1,65 @@
+// frontend/src/components/clients/ClientDetails.scss
+
+.client-details-wrapper {
+  .client-details-header {
+    background-color: var(--bs-light); // Un fond léger pour l'en-tête de la carte
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 1rem 1.25rem; // Ajuster le padding
+
+    h4 {
+      color: var(--bs-primary); // Mettre le nom de l'entreprise en couleur primaire
+    }
+  }
+
+  .section-title {
+    font-size: 1.1rem; // un peu plus petit qu'un h4 standard
+    font-weight: 500;
+    color: var(--bs-emphasis-color);
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--bs-gray-300);
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+
+    .app-icon { // Si vous utilisez votre composant Icon
+      // Styles pour l'icône dans le titre de section
+      // margin-right: 0.5rem; // Déjà géré par me-2
+      color: var(--bs-secondary); // Couleur discrète pour l'icône de titre
+    }
+  }
+
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+    padding-left: 0;
+    padding-right: 0;
+
+    &:first-child {
+      border-top: none;
+    }
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .app-icon { // Si vous utilisez votre composant Icon
+      // margin-right: 0.75rem; // Déjà géré par me-2
+      width: 20px; // Pour aligner le texte même si pas d'icône
+      text-align: center;
+    }
+  }
+
+  .notes-card {
+    font-size: 0.9em;
+    background-color: var(--bs-gray-100) !important; // Forcer un fond plus clair pour les notes
+    border: 1px dashed var(--bs-gray-300);
+  }
+
+  .client-details-footer {
+    background-color: var(--bs-card-cap-bg, rgba(0,0,0,.03));
+    padding: 0.75rem 1.25rem;
+  }
+
+  .client-actions {
+    // Styles pour le conteneur des boutons d'action dans l'en-tête
+  }
+}

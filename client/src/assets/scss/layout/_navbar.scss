@@ -1,0 +1,38 @@
+// frontend/src/assets/scss/layout/_navbar.scss ou global.scss
+
+.app-navbar {
+  // Styles personnalisés pour votre navbar
+  // Par exemple, si vous voulez une hauteur spécifique ou des couleurs différentes
+  // non couvertes par les classes `bg-light` de Bootstrap.
+
+  .navbar-brand {
+    font-weight: bold;
+    // Si vous utilisez une icône comme logo via le composant Icon
+    .app-icon {
+        vertical-align: middle; // Meilleur alignement si la taille de l'icône est différente
+    }
+  }
+
+  // Style pour les liens actifs (NavLink) si le style par défaut de React Router ne suffit pas
+  .nav-link.active {
+    font-weight: bold;
+    // color: var(--bs-primary) !important; // Forcer une couleur si nécessaire
+  }
+
+  .nav-dropdown {
+      .dropdown-toggle::after { // Personnaliser la flèche du dropdown si besoin
+          // margin-left: 0.5em;
+      }
+  }
+
+  // Assurer que les icônes dans les liens/dropdowns sont bien alignées
+  .nav-link, .dropdown-item, .dropdown-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem; // Espace entre l'icône et le texte
+
+    .app-icon { // Si vous utilisez votre composant Icon
+      // flex-shrink: 0; // Empêcher l'icône de rétrécir
+    }
+  }
+}

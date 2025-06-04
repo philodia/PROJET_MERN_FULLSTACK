@@ -1,17 +1,23 @@
+// frontend/src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import { Provider } from 'react-redux';
+import { store } from './app/store'; // Importez votre store
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+import './index.css'; // Ou vos styles globaux
+//import 'bootstrap/dist/css/bootstrap.min.css'; // Si vous utilisez Bootstrap CSS directement
+
+// Dispatch loadUser si un token est présent initialement
+import { loadUser } from './features/auth/authSlice';
+if (store.getState().auth.token) {
+  store.dispatch(loadUser());
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

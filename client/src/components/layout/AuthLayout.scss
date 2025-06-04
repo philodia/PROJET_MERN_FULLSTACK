@@ -1,0 +1,39 @@
+// frontend/src/components/layout/AuthLayout.scss
+
+.auth-layout-wrapper {
+  // background-color: #f0f2f5; // Un fond légèrement différent si vous ne voulez pas bg-light
+  padding: 1rem; // Un peu de padding pour les très petits écrans
+
+  .auth-logo-header {
+    // Styles pour le logo/titre au-dessus de la carte
+    h2 {
+      font-weight: 600;
+    }
+  }
+
+  .auth-card {
+    border: none; // Enlever la bordure par défaut de la carte si shadow-sm suffit
+    border-radius: 0.5rem; // Coins un peu plus arrondis
+
+    .card-header {
+      border-bottom: none; // Pas de bordure sous l'en-tête de la carte
+      border-top-left-radius: calc(0.5rem - 1px); // Ajuster le radius si la carte a un border-radius
+      border-top-right-radius: calc(0.5rem - 1px);
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+
+    .card-body {
+      // Styles spécifiques pour le corps de la carte si besoin
+    }
+  }
+
+  .auth-footer-links {
+    a {
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

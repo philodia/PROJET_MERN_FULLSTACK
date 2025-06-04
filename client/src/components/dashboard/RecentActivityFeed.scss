@@ -1,0 +1,58 @@
+// frontend/src/components/dashboard/RecentActivityFeed.scss
+
+.recent-activity-feed-card {
+  .card-body {
+    // Si la liste est longue, on peut vouloir un scroll interne
+    // max-height: 400px; // Hauteur maximale indicative
+    // overflow-y: auto;
+  }
+
+  .activity-item {
+    border-bottom: 1px solid var(--bs-list-group-border-color, rgba(0,0,0,.125));
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .activity-icon-wrapper {
+      // background-color: var(--bs-light); // Un fond léger pour l'icône si désiré
+      // border-radius: 50%;
+      // width: 32px;
+      // height: 32px;
+      // display: flex;
+      // align-items: center;
+      // justify-content: center;
+      padding-top: 0.15rem; // Petit ajustement vertical pour l'icône
+    }
+
+    .activity-content {
+      .activity-description {
+        font-size: 0.9rem;
+        margin-bottom: 0.15rem;
+        color: var(--bs-body-color);
+      }
+      .activity-user {
+        font-style: italic;
+      }
+      .activity-timestamp {
+        font-size: 0.75rem;
+      }
+    }
+
+    .activity-category {
+      font-size: 0.7em;
+      font-weight: 500;
+      padding: 0.3em 0.6em;
+    }
+  }
+
+  .card-footer {
+    background-color: var(--bs-card-cap-bg, rgba(0,0,0,.03)); // Couleur de fond du header/footer
+    border-top: 1px solid var(--bs-card-border-color, rgba(0,0,0,.125));
+    a {
+        text-decoration: none;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+// frontend/src/components/layout/PageContainer.scss
+
+.page-container-wrapper {
+  // Styles pour le wrapper externe si nécessaire.
+  // Par défaut, il prendra la largeur de son parent (souvent la zone `content-area` de MainLayout).
+  // padding-top: 1.5rem; // Ou géré par la classe p-3/p-4 de MainLayout
+  // padding-bottom: 1.5rem;
+}
+
+.page-container-header {
+  // Styles pour l'en-tête de page intégré (si utilisé)
+  .page-title {
+    // font-size: 1.75rem; // Exemple de taille pour h1 comme h3
+    color: var(--bs-emphasis-color);
+  }
+  // .page-header-actions {
+  //   // Styles pour le conteneur des actions
+  // }
+}
+
+.page-container-content {
+  // Styles pour la zone de contenu principale à l'intérieur du Container Bootstrap
+  // Par exemple, si vous voulez un fond spécifique ou d'autres styles par défaut.
+}

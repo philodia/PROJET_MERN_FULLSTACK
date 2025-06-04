@@ -1,0 +1,31 @@
+/* frontend/src/components/common/PageHeader.css */
+.page-header-container {
+  /* background-color: #f8f9fa; */ /* Exemple de fond léger */
+  /* padding: 1rem; */
+  /* border-bottom: 1px solid #dee2e6; */
+}
+
+.page-header-title {
+  font-size: 1.75rem; /* Ajustez selon vos besoins */
+  font-weight: 500;
+}
+
+.page-header-subtitle {
+  font-size: 0.9rem;
+}
+
+.page-header-actions > * {
+  /* S'assurer que les éléments d'action ont un peu d'espace entre eux s'ils sont plusieurs */
+  /* Par exemple, si vous passez plusieurs boutons directement */
+  /* margin-left: 0.5rem; */
+}
+
+/* .page-header-actions > *:first-child {
+  margin-left: 0;
+} */
+
+.page-header-breadcrumbs nav ol { /* Cible spécifiquement la liste du fil d'ariane de Bootstrap */
+    margin-bottom: 0 !important; /* Enlever la marge du bas du fil d'ariane s'il est dans l'en-tête */
+    /* background-color: transparent !important;
+    padding-left: 0 !important; */
+}

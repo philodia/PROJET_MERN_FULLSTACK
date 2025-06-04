@@ -1,0 +1,80 @@
+// frontend/src/components/clients/ClientCard.scss
+
+.client-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex; // Pour que h-100 fonctionne bien avec le contenu flex du body
+  flex-direction: column;
+
+  // Si vous utilisez la version où toute la carte est un lien
+  // a.client-card-link-wrapper:hover & {
+  //   transform: translateY(-3px);
+  //   box-shadow: var(--bs-card-box-shadow), 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+  // }
+
+  &:hover { // Effet de survol même si ce n'est pas un lien global
+    // Si vous voulez un effet même sans lien global
+    // transform: translateY(-2px);
+    // box-shadow: var(--bs-card-box-shadow), 0 0.3rem 0.8rem rgba(0, 0, 0, 0.075) !important;
+  }
+
+
+  .client-card-header {
+    background-color: var(--bs-light);
+    padding: 0.75rem 1rem; // Un peu moins de padding vertical
+    border-bottom: 1px solid var(--bs-border-color);
+
+    .card-title {
+        // Styles pour le titre de la carte (nom de l'entreprise)
+        font-size: 1.1rem; // Légèrement plus grand
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: calc(100% - 70px); // Laisser de la place pour le badge de statut
+    }
+    .client-name-link {
+        color: var(--bs-primary);
+        &:hover {
+            text-decoration: underline;
+            color: darken(var(--bs-primary), 10%);
+        }
+    }
+  }
+
+  .client-card-body {
+    padding: 1rem;
+    flex-grow: 1; // Pour que le body prenne l'espace disponible
+
+    .client-card-field {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.6rem;
+      font-size: 0.9rem;
+      color: var(--bs-body-color);
+
+      .app-icon { // Si vous utilisez votre composant Icon
+        flex-shrink: 0; // Empêcher l'icône de rétrécir
+        width: 20px; // Pour aligner le texte
+        text-align: center;
+      }
+
+      a {
+          &:hover {
+              text-decoration: underline;
+          }
+      }
+    }
+  }
+
+  .client-card-actions {
+    background-color: var(--bs-card-cap-bg); // Couleur de fond légère pour le footer
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--bs-card-border-color);
+
+    .btn {
+      // Style pour les boutons d'action si besoin
+      // Par exemple, pour les icônes seules:
+      // padding: 0.25rem 0.5rem;
+      // .app-icon { margin-right: 0 !important; }
+    }
+  }
+}

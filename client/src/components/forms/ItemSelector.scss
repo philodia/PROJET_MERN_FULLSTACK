@@ -1,0 +1,44 @@
+// frontend/src/components/forms/ItemSelector.scss
+
+.item-selector-wrapper {
+  .item-adder-card {
+    // Styles pour la carte d'ajout d'item
+    .card-header {
+        // background-color: var(--bs-light);
+    }
+  }
+
+  .selected-items-list {
+    .selected-item-card {
+      background-color: var(--bs-gray-100, #f8f9fa); // Un fond légèrement différent pour les items
+      border: 1px solid var(--bs-gray-300, #dee2e6);
+
+      .item-description-input, .item-description-text {
+        font-size: 0.85em;
+        color: var(--bs-secondary);
+      }
+      .item-description-text {
+          white-space: pre-wrap; // Conserver les retours à la ligne de la description
+      }
+
+      .item-input { // Pour les inputs de quantité et prix
+        // max-width: 80px; // Limiter la largeur si besoin
+      }
+      .item-value, .item-total {
+        display: block; // Assurer qu'ils prennent de la place
+        padding-top: 0.375rem; // Similaire au padding d'un input pour l'alignement
+        padding-bottom: 0.375rem;
+      }
+      .item-total {
+        font-weight: bold;
+      }
+
+      // Aligner le bouton de suppression à droite sur les grands écrans
+      @media (min-width: 768px) { // md breakpoint
+        .text-md-end {
+          // text-align: right !important;
+        }
+      }
+    }
+  }
+}

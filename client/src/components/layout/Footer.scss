@@ -1,0 +1,35 @@
+// frontend/src/components/layout/Footer.scss
+
+.app-footer {
+  // mt-auto est important pour le "sticky footer" si le contenu principal n'est pas assez long.
+  // Doit être appliqué sur le footer dans le contexte d'un layout flex (ex: body ou wrapper principal en display: flex; flex-direction: column;).
+
+  .social-links-section {
+    // Styles pour la section des liens sociaux si besoin
+    .text-reset .app-icon:hover { // Si vous utilisez votre composant Icon
+        color: var(--bs-primary) !important; // Changer la couleur au survol
+    }
+  }
+
+  .main-links-section {
+    // Styles pour la section des liens principaux
+    .footer-links-column {
+      .nav-link {
+        margin-bottom: 0.5rem;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  .copyright-section {
+    // Styles pour la section copyright
+    a {
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

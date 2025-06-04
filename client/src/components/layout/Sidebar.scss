@@ -1,0 +1,137 @@
+// frontend/src/components/layout/Sidebar.scss
+
+$sidebar-width: 250px;
+$sidebar-bg: #f8f9fa; // Couleur de fond (similaire à bg-light de Bootstrap)
+$sidebar-text-color: #212529;
+$sidebar-link-hover-bg: #e9ecef;
+$sidebar-link-active-bg: #0d6efd; // Couleur primaire Bootstrap
+$sidebar-link-active-color: #fff;
+$sidebar-transition-duration: 0.3s;
+
+.sidebar-wrapper {
+  width: $sidebar-width;
+  min-height: calc(100vh - 56px); // Hauteur de la navbar (ajuster si différente)
+  background-color: $sidebar-bg;
+  border-right: 1px solid #dee2e6; // Bordure Bootstrap
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  transition: margin-left $sidebar-transition-duration ease-in-out,
+              transform $sidebar-transition-duration ease-in-out;
+  position: fixed; // Ou sticky, selon votre layout
+  top: 56px; // Sous la navbar (ajuster si hauteur navbar différente)
+  left: 0;
+  z-index: 1020; // Moins que les modales, plus que le contenu
+
+  &.closed {
+    margin-left: -$sidebar-width;
+  }
+
+  // Pour les écrans larges, la sidebar est toujours visible
+  @media (min-width: 992px) { // lg breakpoint de Bootstrap
+    position: sticky; // Pour qu'elle scrolle avec le contenu mais reste visible
+    margin-left: 0 !important; // Toujours ouverte
+    &.closed { // Ne devrait pas arriver sur grand écran si bien géré
+        margin-left: 0;
+    }
+  }
+
+  .sidebar-nav {
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      color: $sidebar-text-color;
+      text-decoration: none;
+      transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+      font-size: 0.95rem;
+      white-space: nowrap; // Empêcher le retour à la ligne du texte des liens
+
+      .sidebar-icon {
+        margin-right: 0.75rem;
+        font-size: 1.1em; // Légèrement plus grand pour l'icône
+        width: 20px; // Pour aligner le texte même si pas d'icône
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .sidebar-label {
+        flex-grow: 1;
+      }
+
+      .sidebar-submenu-arrow {
+        margin-left: auto;
+        font-size: 0.8em;
+        transition: transform 0.2s ease-in-out;
+      }
+
+      &.submenu-open {
+        .sidebar-submenu-arrow {
+          transform: rotate(180deg);
+        }
+      }
+
+
+      &:hover, &:focus {
+        background-color: $sidebar-link-hover-bg;
+        color: darken($sidebar-text-color, 10%);
+      }
+
+      // Style pour NavLink actif
+      &.active {
+        background-color: $sidebar-link-active-bg;
+        color: $sidebar-link-active-color;
+        font-weight: 500;
+
+        .sidebar-icon {
+          color: $sidebar-link-active-color; // S'assurer que l'icône change aussi de couleur
+        }
+      }
+
+      // Niveaux d'indentation pour les sous-menus
+      &.level-1 { padding-left: 2rem; }
+      &.level-2 { padding-left: 3rem; }
+      // etc.
+    }
+  }
+
+  .sidebar-submenu {
+    background-color: darken($sidebar-bg, 3%); // Légèrement plus foncé pour les sous-menus
+    .nav-link { // Les liens dans les sous-menus
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      font-size: 0.9rem;
+
+      &:hover, &:focus {
+        background-color: darken($sidebar-link-hover-bg, 3%);
+      }
+      &.active {
+        background-color: darken($sidebar-link-active-bg, 5%);
+        // color: $sidebar-link-active-color; // Hérité
+      }
+    }
+  }
+}
+
+// Overlay pour petits écrans quand la sidebar est ouverte
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1019; // Juste en dessous de la sidebar
+    display: none; // Géré par JS ou classe sur body
+
+    &.active {
+        display: block;
+    }
+}
+
+// Ajustement du contenu principal quand la sidebar est ouverte sur grands écrans
+// Si vous n'utilisez pas `position: fixed` pour la sidebar mais un `margin-left` sur le contenu principal.
+// .main-content-area.sidebar-open {
+//   @media (min-width: 992px) {
+//     margin-left: $sidebar-width;
+//   }
+// }

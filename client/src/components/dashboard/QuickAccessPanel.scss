@@ -1,0 +1,42 @@
+// frontend/src/components/dashboard/QuickAccessPanel.scss
+
+.quick-access-panel-card {
+  .quick-access-list {
+    .quick-access-item {
+      padding-top: 0.85rem;
+      padding-bottom: 0.85rem;
+      transition: background-color 0.15s ease-in-out;
+
+      // Style pour ListGroup.Item avec la prop 'action'
+      &.list-group-item-action {
+        &:hover, &:focus {
+          // background-color: var(--bs-list-group-action-hover-bg, #f0f0f0);
+          // color: var(--bs-list-group-action-hover-color, var(--bs-body-color));
+          // Utiliser des couleurs plus distinctes pour le survol
+          background-color: var(--bs-primary-bg-subtle, #cfe2ff);
+          color: var(--bs-primary, #0d6efd);
+
+          .quick-access-item-icon, .quick-access-item-label, .quick-access-item-arrow {
+            color: var(--bs-primary, #0d6efd) !important; // Forcer la couleur au survol
+          }
+        }
+      }
+
+      .quick-access-item-icon {
+        // Style de l'icône
+        transition: color 0.15s ease-in-out;
+      }
+
+      .quick-access-item-label {
+        font-weight: 500;
+        font-size: 0.95rem;
+        color: var(--bs-body-color);
+        transition: color 0.15s ease-in-out;
+      }
+
+      .quick-access-item-arrow {
+        transition: color 0.15s ease-in-out;
+      }
+    }
+  }
+}

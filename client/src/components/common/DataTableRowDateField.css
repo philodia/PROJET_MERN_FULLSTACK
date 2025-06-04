@@ -1,0 +1,23 @@
+/* frontend/src/components/common/DataTableRowDateField.css */
+
+.data-table-row-date-field .react-datepicker-wrapper,
+.data-table-row-date-field .react-datepicker__input-container {
+  width: 100%; /* S'assurer que le datepicker prend toute la largeur de la cellule */
+}
+
+.data-table-row-date-field .form-control.form-control-sm {
+  /* Ajuster la hauteur ou le padding si nécessaire pour s'aligner avec les autres cellules */
+  /* Par exemple, si vos cellules de table ont un padding spécifique */
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  /* font-size: inherit; */ /* Pour hériter de la taille de police de la table */
+}
+
+.data-table-row-date-display {
+  /* Styles pour l'affichage non modifiable si nécessaire */
+  white-space: nowrap; /* Empêcher la date de passer à la ligne */
+}
+
+/* Vous pouvez ajouter des styles pour que le calendrier popup s'affiche correctement
+   par rapport à la cellule de la table, bien que react-datepicker gère cela
+   généralement bien avec popper.js. */

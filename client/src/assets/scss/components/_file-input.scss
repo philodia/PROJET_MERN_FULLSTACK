@@ -1,0 +1,55 @@
+// frontend/src/assets/scss/components/_file-input.scss ou global.scss
+
+.file-input-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $input-padding-y $input-padding-x; // Utiliser les variables Bootstrap
+  min-height: $input-height;                   // Utiliser les variables Bootstrap
+  cursor: pointer;
+  background-color: $input-bg;                // Utiliser les variables Bootstrap
+  border: $input-border-width solid $input-border-color; // Utiliser les variables Bootstrap
+  border-radius: $input-border-radius;         // Utiliser les variables Bootstrap
+
+  &:hover {
+    border-color: $input-focus-border-color; // Un peu de feedback au survol
+  }
+
+  &.disabled {
+    background-color: $input-disabled-bg;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &.is-invalid {
+    border-color: $form-feedback-invalid-color; // Couleur de bordure d'erreur Bootstrap
+     &:focus-within, &:hover { // Garder la bordure d'erreur au focus/hover
+      border-color: $form-feedback-invalid-color;
+      box-shadow: 0 0 0 $input-btn-focus-width rgba($form-feedback-invalid-color, .25);
+    }
+  }
+
+  .file-input-text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $input-color; // Couleur de texte Bootstrap
+    &::placeholder { // Si vous utilisiez un input textuel directement
+        color: $input-placeholder-color;
+    }
+  }
+
+  .file-input-icon {
+    color: #6c757d; // Gris neutre pour l'icône
+  }
+
+  .file-input-clear-btn {
+    color: #6c757d;
+    text-decoration: none;
+    line-height: 1; // Pour un meilleur alignement
+    &:hover {
+      color: $danger; // Couleur Bootstrap pour danger
+    }
+  }
+}

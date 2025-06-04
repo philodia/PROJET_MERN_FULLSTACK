@@ -1,0 +1,36 @@
+// frontend/src/components/forms/FormSection.scss
+
+.form-section-card {
+  // Styles spécifiques pour la carte si `useCard` est true.
+  // Par exemple, pour unifier l'apparence des Card.Header si vous ne passez pas de classe.
+  .card-header {
+    // background-color: var(--bs-light);
+    // font-weight: 500;
+  }
+}
+
+.form-section {
+  // Styles pour la section si `useCard` est false.
+  // Souvent, un simple `margin-bottom` suffit, qui peut être passé via `className`.
+  // Par exemple, on pourrait le mettre par défaut :
+  // margin-bottom: 1.5rem; // Similaire à `mb-4`
+}
+
+// Styles pour le titre, que ce soit dans une carte ou non (si vous n'utilisez pas Card.Header)
+.form-section-title {
+  // Styles pour le titre si rendu directement par le composant
+  // (ex: si `useCard` est false, ou si vous rendez le titre à l'intérieur de Card.Body)
+  // font-size: 1.25rem; // Exemple si c'est un h4
+  // color: var(--bs-emphasis-color);
+  // border-bottom: 1px solid var(--bs-border-color);
+  // padding-bottom: 0.5rem;
+  // margin-bottom: 1rem !important; // Forcer un margin-bottom pour le titre
+}
+
+.form-section-title-no-card {
+    // Styles spécifiques pour le titre quand il n'y a pas de Card.Header pour le styler.
+    // h1, h2, h3, h4, h5, h6 {} // Vous pouvez cibler les tags directement.
+    // Par exemple, si vous voulez que tous les titres de section aient une certaine allure :
+    font-weight: 500;
+    color: var(--bs-heading-color); // Couleur des titres Bootstrap
+}

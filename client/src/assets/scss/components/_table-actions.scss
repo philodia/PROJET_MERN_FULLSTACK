@@ -1,0 +1,29 @@
+// frontend/src/assets/scss/components/_table-actions.scss ou global.scss
+
+.table-actions {
+  // Styles pour le conteneur si vous en avez besoin
+  gap: 0.25rem; // Petit espace entre les icônes d'action
+}
+
+.table-action-icon {
+  // Styles spécifiques pour les icônes d'action si 'btn-link btn-sm' ne suffit pas
+  // Par exemple, pour assurer une taille de zone cliquable minimale
+  // padding: 0.25rem 0.5rem;
+  color: var(--bs-gray-600); // Couleur par défaut pour les icônes d'action
+
+  &:hover:not(:disabled), &:focus:not(:disabled) {
+    color: var(--bs-primary); // Couleur au survol/focus
+  }
+
+  &.text-danger {
+    &:hover:not(:disabled), &:focus:not(:disabled) {
+      color: darken(var(--bs-danger), 10%) !important; // Assombrir le rouge au survol
+    }
+  }
+
+  &.disabled {
+    color: var(--bs-gray-400);
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+}

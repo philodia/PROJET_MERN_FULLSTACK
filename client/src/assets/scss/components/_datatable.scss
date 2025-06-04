@@ -1,0 +1,11 @@
+/* frontend/src/assets/scss/components/_datatable.scss ou similaire */
+.sortable-header {
+  /* Un peu de style pour indiquer que l'en-tête est cliquable */
+}
+.sortable-header:hover {
+  background-color: #f8f9fa; /* Couleur de fond légère au survol */
+}
+
+.datatable-container .table td, .datatable-container .table th {
+  vertical-align: middle; /* Meilleur alignement vertical */
+}

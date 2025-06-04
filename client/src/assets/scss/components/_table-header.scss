@@ -1,0 +1,26 @@
+// frontend/src/assets/scss/components/_table-header.scss ou dans le style du DataTable
+
+.table-header {
+  // Styles généraux pour l'en-tête si nécessaire
+  // background-color: var(--bs-gray-100); // Exemple
+  // border-bottom: 2px solid var(--bs-gray-300);
+
+  .table-header-cell {
+    vertical-align: middle; // Bon pour l'alignement du texte et des icônes de tri
+    // white-space: nowrap; // Empêcher le retour à la ligne des titres si désiré
+
+    &.sortable {
+      cursor: pointer;
+      user-select: none; // Empêcher la sélection de texte lors du clic pour trier
+
+      &:hover {
+        background-color: var(--bs-gray-200); // Feedback visuel au survol
+      }
+    }
+  }
+
+  .table-header-checkbox {
+    // Styles spécifiques pour la cellule de la checkbox "Tout sélectionner"
+    vertical-align: middle !important;
+  }
+}
