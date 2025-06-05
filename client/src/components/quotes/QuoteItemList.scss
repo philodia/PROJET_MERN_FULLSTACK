@@ -1,0 +1,32 @@
+// frontend/src/components/quotes/QuoteItemList.scss
+
+.quote-item-list-card {
+  .quote-items-table {
+    font-size: 0.9rem; // Rendre la table un peu plus compacte
+
+    th {
+      // background-color: var(--bs-gray-100);
+      // font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td, th {
+      vertical-align: middle;
+    }
+
+    .item-description-cell {
+      font-size: 0.85em;
+      color: var(--bs-secondary);
+      white-space: pre-wrap; // Conserver les retours à la ligne
+      max-width: 300px; // Limiter la largeur pour les descriptions longues
+      // Peut nécessiter des styles pour le troncage si besoin
+    }
+
+    .text-end {
+      text-align: right !important;
+    }
+    .text-center {
+      text-align: center !important;
+    }
+  }
+}

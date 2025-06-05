@@ -1,0 +1,73 @@
+// frontend/src/components/accounting/BalanceSheetTable.scss
+
+.balance-sheet-card {
+  .card-header {
+    // background-color: var(--bs-light);
+    .small {
+      font-weight: 400;
+    }
+  }
+
+  .balance-sheet-section {
+    .section-title {
+      font-size: 1rem; // Un peu plus petit pour les titres de section internes
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      // text-transform: uppercase;
+      // border-bottom: 1px solid var(--bs-border-color-translucent);
+      // padding-bottom: 0.5rem;
+
+      // Couleurs spécifiques si vous ne les passez pas directement
+      // &.text-primary { color: var(--bs-primary) !important; }
+      // &.text-success { color: var(--bs-success) !important; }
+      // &.text-info { color: var(--bs-info) !important; }
+    }
+
+    .table {
+      font-size: 0.9em; // Rendre le texte de la table un peu plus petit
+      th {
+        // font-weight: 500;
+        // background-color: var(--bs-table-bg);
+      }
+    }
+
+    .balance-sheet-item {
+      // Style pour les items normaux
+      &.level-1 { /* Indentation pour sous-items */ }
+      &.level-2 { /* ... */ }
+
+      &.total-row { // Lignes de total de sous-section
+        // background-color: var(--bs-table-striped-bg);
+        border-top: 1px solid var(--bs-table-border-color);
+      }
+    }
+
+    .total-section-row { // Ligne de total principal de section (ex: Total Actif)
+      background-color: var(--bs-secondary-bg-subtle);
+      border-top: 2px solid var(--bs-secondary-border-subtle);
+      font-size: 1.05em;
+    }
+  }
+   .total-summary-table { // Pour le total Passif + CP
+     td {
+        border: none; // Pas de bordures pour cette table de résumé
+     }
+     .total-section-row {
+        background-color: var(--bs-gray-200);
+        border-top: 2px solid var(--bs-gray-400);
+     }
+   }
+
+
+  .balance-check-summary {
+    .card {
+        border-width: 2px;
+    }
+    .bg-success-subtle { // Bootstrap 5.3+
+        border-color: var(--bs-success-border-subtle);
+    }
+    .bg-danger-subtle { // Bootstrap 5.3+
+        border-color: var(--bs-danger-border-subtle);
+    }
+  }
+}

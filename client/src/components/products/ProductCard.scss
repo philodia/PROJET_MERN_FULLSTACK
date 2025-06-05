@@ -1,0 +1,75 @@
+// frontend/src/components/products/ProductCard.scss
+// Ou dans src/assets/scss/components/_entity-card.scss
+
+.product-card { // Peut partager des styles avec .client-card et .supplier-card
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    // transform: translateY(-2px);
+    // box-shadow: var(--bs-card-box-shadow), 0 0.3rem 0.8rem rgba(0, 0, 0, 0.075) !important;
+  }
+
+  .product-card-header {
+    background-color: var(--bs-light);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+
+    .product-card-name {
+      font-size: 1.05rem; // Un peu plus petit pour les noms de produits potentiellement longs
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      // Ajuster max-width si le badge de statut prend trop de place
+      max-width: calc(100% - 70px);
+
+      a {
+        color: var(--bs-link-color); // Couleur de lien standard Bootstrap
+         text-decoration: none;
+        &:hover {
+          text-decoration: underline;
+          color: var(--bs-link-hover-color);
+        }
+      }
+    }
+  }
+
+  .product-card-body {
+    padding: 1rem;
+    flex-grow: 1;
+
+    .product-card-field {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--bs-body-color);
+
+      .app-icon {
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+    }
+    .sku-field {
+        font-size: 0.8em;
+        margin-bottom: 0.75rem;
+    }
+    .price-field {
+        font-size: 1.1em;
+    }
+    .stock-field {
+      // Styles spécifiques pour le stock si besoin
+    }
+    .product-card-description {
+        line-height: 1.4;
+    }
+  }
+
+  .product-card-actions {
+    background-color: var(--bs-card-cap-bg);
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--bs-card-border-color);
+  }
+}

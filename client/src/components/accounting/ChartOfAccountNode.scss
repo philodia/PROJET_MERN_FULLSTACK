@@ -1,0 +1,65 @@
+// frontend/src/components/accounting/ChartOfAccountNode.scss
+
+.coa-node-item {
+  // Styles pour chaque item du plan comptable
+  // La prop 'action' sur ListGroup.Item ajoute déjà des styles de survol
+  border: none !important; // Enlever les bordures par défaut de ListGroup.Item si dans un flush
+
+  &.list-group-item-action {
+    &:hover, &:focus {
+      background-color: var(--bs-list-group-action-hover-bg, #f0f0f0);
+    }
+  }
+
+  &.selected, &.active { // 'active' est la classe de Bootstrap pour ListGroup.Item sélectionné
+    // background-color: var(--bs-primary-bg-subtle, #cfe2ff) !important;
+    // color: var(--bs-primary, #0d6efd) !important;
+    font-weight: 500;
+
+    .coa-node-label, .coa-node-number {
+        // color: var(--bs-primary, #0d6efd) !important;
+    }
+  }
+
+  // Indentation gérée par style en ligne, mais on peut ajouter une bordure
+  // pour visualiser la hiérarchie.
+  // &.level-1 { /* ... */ }
+  // &.level-2 { /* ... */ }
+
+  .coa-node-toggle {
+    color: var(--bs-secondary);
+    text-decoration: none;
+    &:hover {
+      color: var(--bs-primary);
+    }
+  }
+
+  .coa-node-spacer {
+    // Juste pour l'alignement, pas besoin de styles spécifiques généralement
+  }
+
+  .coa-node-label {
+    cursor: default; // Par défaut, le label n'est pas cliquable
+    &.clickable-label {
+      cursor: pointer;
+      &:hover {
+        text-decoration: underline;
+        color: var(--bs-primary);
+      }
+    }
+  }
+
+  .coa-node-number {
+    font-size: 0.9em;
+  }
+
+  .coa-node-type {
+    font-size: 0.75em;
+  }
+}
+
+.coa-node-children {
+  // Styles pour le conteneur des enfants
+  // La ListGroup interne gérera ses propres styles
+  // La bordure gauche est ajoutée via style en ligne pour l'instant
+}

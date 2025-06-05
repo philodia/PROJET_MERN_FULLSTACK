@@ -1,0 +1,68 @@
+// frontend/src/components/suppliers/SupplierCard.scss
+// Ou dans un fichier commun ex: src/assets/scss/components/_entity-card.scss
+// et importer ce fichier dans ClientCard.scss et SupplierCard.scss
+
+// Si vous utilisez un fichier commun, préfixez les classes pour éviter les conflits ou utilisez des classes génériques.
+// Pour cet exemple, on garde des classes spécifiques.
+
+.supplier-card { // Peut partager des styles avec .client-card
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    // Effet de survol
+  }
+
+  .supplier-card-header {
+    background-color: var(--bs-light);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+
+    .card-title {
+      font-size: 1.1rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: calc(100% - 80px); // Espace pour le badge de statut
+    }
+    .supplier-name-link {
+        color: var(--bs-primary); // Ou une autre couleur distinctive pour les fournisseurs
+        &:hover {
+            text-decoration: underline;
+            color: darken(var(--bs-primary), 10%);
+        }
+    }
+  }
+
+  .supplier-card-body {
+    padding: 1rem;
+    flex-grow: 1;
+
+    .supplier-card-field {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.6rem;
+      font-size: 0.9rem;
+      color: var(--bs-body-color);
+
+      .app-icon {
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+
+      a {
+          &:hover {
+              text-decoration: underline;
+          }
+      }
+    }
+  }
+
+  .supplier-card-actions {
+    background-color: var(--bs-card-cap-bg);
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--bs-card-border-color);
+  }
+}

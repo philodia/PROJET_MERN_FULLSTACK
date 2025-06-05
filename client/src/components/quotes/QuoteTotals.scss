@@ -1,0 +1,48 @@
+// frontend/src/components/quotes/QuoteTotals.scss
+
+.quote-totals-container {
+  // Styles pour le conteneur si useCard est false
+  // Par exemple, pour ajouter une bordure ou un fond s'il est utilisé de manière autonome.
+  // padding: 1rem;
+  // background-color: var(--bs-light);
+  // border-radius: var(--bs-border-radius);
+}
+
+.quote-totals-card {
+  // Styles spécifiques si useCard est true
+  .card-header {
+    // font-weight: 500;
+  }
+}
+
+.quote-totals-title {
+  // Styles pour le titre si useCard est false
+  font-weight: 500;
+  color: var(--bs-emphasis-color);
+}
+
+.quote-totals-table {
+  td {
+    border-top: none; // Enlever les bordures de la table borderless
+    padding: 0.4rem 0; // Espacement vertical plus serré
+  }
+
+  .vat-detail-row td {
+    // color: var(--bs-gray-600);
+    font-size: 0.85em; // Rendre les détails de TVA un peu plus petits
+    border-top: 1px dashed var(--bs-border-color-translucent); // Séparateur léger
+    &:first-child { // Le label "TVA à X%"
+        // padding-left: 1.5rem; // Indentation
+    }
+  }
+
+  .quote-total-ttc {
+    td {
+      border-top: 1px solid var(--bs-secondary-border-subtle); // Séparateur plus visible avant le TTC
+      padding-top: 0.75rem !important; // Plus d'espace avant le total TTC
+    }
+    .h5 { // Style pour le montant TTC
+      color: var(--bs-primary); // Ou une autre couleur pour le mettre en évidence
+    }
+  }
+}

@@ -1,0 +1,45 @@
+// frontend/src/components/users/UserListItem.scss
+
+.user-list-item {
+  // Styles de base pour l'item de liste
+  // La prop 'action' sur ListGroup.Item ajoute des styles de survol
+
+  .username {
+    font-weight: 500;
+    color: var(--bs-emphasis-color);
+  }
+
+  .email, .last-login {
+    // font-size: 0.875rem;
+  }
+  .x-small {
+    font-size: 0.75rem;
+  }
+
+  .user-item-info {
+    // Styles pour la section rôle/statut
+    flex-shrink: 0; // Empêcher de rétrécir
+  }
+
+  .user-item-actions {
+    display: flex;
+    gap: 0.25rem; // Espace entre les boutons d'action
+    flex-shrink: 0;
+
+    .btn-link { // Style plus compact pour les icônes d'action
+      &:hover {
+        // background-color: var(--bs-light); // Léger fond au survol
+      }
+    }
+  }
+
+  // S'assurer que le contenu ne déborde pas trop
+  .flex-grow-1 {
+    min-width: 0; // Important pour que text-overflow fonctionne sur les enfants
+    .username, .email {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+  }
+}

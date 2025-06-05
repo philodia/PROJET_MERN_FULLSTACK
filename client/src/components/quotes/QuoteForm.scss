@@ -1,0 +1,22 @@
+// frontend/src/components/quotes/QuoteForm.scss
+
+.quote-form {
+  .quote-totals {
+    // Styles pour la section des totaux
+    // background-color: var(--bs-light);
+    // padding: 1rem;
+    // border-radius: var(--bs-border-radius);
+    hr {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .h5 strong { // Pour Total TTC
+        color: var(--bs-primary);
+    }
+  }
+
+  // Si ItemSelector a besoin d'ajustements de padding quand il est dans une Card.Body p-0
+  // .card-body.p-0 .item-selector-wrapper {
+  //   padding: 1rem; // Rétablir un padding interne pour ItemSelector
+  // }
+}

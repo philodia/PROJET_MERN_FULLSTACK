@@ -1,0 +1,101 @@
+// frontend/src/components/quotes/QuoteView.scss
+
+.quote-view-wrapper {
+  // Styles pour le conteneur global si nécessaire
+  // background-color: #f9f9f9; // Un fond légèrement différent pour la page de prévisualisation
+
+  .quote-document {
+    border: 1px solid #dee2e6;
+    border-radius: 0; // Souvent, les documents PDF n'ont pas de bordures arrondies
+    box-shadow: none; // Pas d'ombre pour l'impression/PDF
+
+    .quote-header-section {
+      border-bottom: 2px solid #000; // Une ligne plus épaisse sous l'en-tête
+      .company-logo {
+        max-height: 60px; // Ajuster la taille du logo
+        max-width: 200px;
+        object-fit: contain;
+      }
+      .company-name {
+        font-weight: bold;
+      }
+      .quote-title {
+        font-weight: bold;
+        color: var(--bs-primary); // Ou une couleur sobre pour l'impression
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .quote-meta-info p {
+        font-size: 0.9em;
+      }
+    }
+
+    .client-info-section {
+      // background-color: var(--bs-light);
+      // padding: 1rem;
+      // border-radius: var(--bs-border-radius-sm);
+      // border: 1px solid var(--bs-border-color);
+      // margin-bottom: 1.5rem !important;
+      .client-name {
+        font-weight: 500;
+      }
+      p.small .app-icon { // Icônes email/téléphone
+        vertical-align: text-bottom;
+      }
+    }
+
+    // Réutiliser les styles de QuoteItemList.scss si possible
+    // Sinon, définir des styles spécifiques pour la table des items ici.
+    // ex: .quote-items-table { ... }
+
+    .totals-and-notes-section {
+      .notes-section {
+        .notes-content {
+          border: 1px dashed var(--bs-border-color-translucent);
+          background-color: var(--bs-gray-100) !important;
+          pre { // Pour conserver le formatage des notes
+            white-space: pre-wrap;       /* CSS3 */
+            word-wrap: break-word;     /* Internet Explorer 5.5+ */
+            margin-bottom: 0;
+            font-family: inherit; // Utiliser la police par défaut
+            font-size: inherit;
+          }
+        }
+      }
+      .totals-section {
+        // Les styles de QuoteTotals.scss devraient s'appliquer ici
+      }
+    }
+
+    .quote-footer-section {
+      border-top: 1px solid #dee2e6;
+      // background-color: var(--bs-light);
+      a {
+          text-decoration: none;
+          color: var(--bs-link-color);
+          &:hover {
+              text-decoration: underline;
+          }
+      }
+    }
+  }
+
+  // Styles spécifiques pour la vue PDF (optimisation de l'impression)
+  &.pdf-view {
+    font-size: 10pt; // Taille de police plus petite pour PDF
+    color: #333; // Couleurs d'impression plus standard
+
+    .card {
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .quote-header-section, .quote-footer-section {
+        background-color: transparent !important;
+    }
+    .bg-light { // Rendre les fonds légers transparents pour l'impression
+        background-color: transparent !important;
+    }
+    // Cacher les éléments non pertinents pour le PDF (ex: boutons d'action)
+    // .actions-to-hide-on-pdf { display: none !important; }
+  }
+}
