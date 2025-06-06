@@ -1,0 +1,66 @@
+// frontend/src/components/stock/StockListItem.scss
+
+.stock-list-item {
+  // Styles pour chaque item de la liste de stock
+  &.list-group-item-action {
+    &:hover, &:focus, &:focus-within {
+      background-color: var(--bs-list-group-action-hover-bg, #f0f0f0);
+    }
+  }
+
+  &.item-inactive {
+    .item-name a, .sku-info, .item-price { // Griser le texte si inactif
+      color: var(--bs-gray-600) !important;
+      text-decoration: line-through;
+    }
+    opacity: 0.7;
+  }
+
+  .item-main-info {
+    .item-name a {
+      font-weight: 500;
+      color: var(--bs-body-color);
+      &:hover {
+        color: var(--bs-primary);
+      }
+    }
+    .sku-info {
+      font-size: 0.8em;
+    }
+    .item-price {
+      font-size: 0.9em;
+    }
+  }
+
+  .item-stock-info {
+    .stock-quantity {
+      font-size: 1.2rem;
+    }
+    .stock-progress-bar-sm { // ProgressBar plus petite pour la liste
+      height: 8px;
+      font-size: 0.65rem; // Pour le label à l'intérieur s'il y en a un
+      .progress-bar {
+        // text-shadow: none; // Enlever l'ombre du texte si trop petit
+      }
+       &.pulsate-progress { // Réutiliser l'animation de StockList.scss
+        .progress-bar.bg-danger, .progress-bar.bg-warning {
+          animation: stock-pulse-bar 2s infinite ease-in-out;
+        }
+      }
+    }
+  }
+
+  .item-actions-footer {
+    // Si vous voulez un style particulier pour les actions en bas de l'item
+    .btn {
+        font-size: 0.8rem; // Boutons plus petits
+    }
+  }
+}
+
+// Animation de pulsation (peut être dans un fichier global si réutilisée)
+@keyframes stock-pulse-bar {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}

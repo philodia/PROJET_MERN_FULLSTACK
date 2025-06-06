@@ -1,0 +1,113 @@
+// frontend/src/components/deliveryNotes/DeliveryNoteView.scss
+// et frontend/src/components/common/DocumentItemListReadOnly.scss (ou un fichier _document-view.scss partagé)
+
+// Styles communs pour les documents (devis, BL, facture)
+.document-view-card { // Classe de base pour QuoteView, DeliveryNoteView, InvoiceView
+  border: 1px solid #dee2e6;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 0.95rem; // Taille de police de base pour les documents
+
+  .document-header-section {
+    border-bottom: 2px solid #333; // Ligne plus foncée
+    .company-logo {
+      max-height: 50px;
+      max-width: 180px;
+      object-fit: contain;
+    }
+    .company-name {
+      font-weight: bold;
+    }
+    .document-title {
+      font-weight: bold;
+      color: var(--bs-dark); // Couleur sobre pour le titre du document
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 1.8rem;
+    }
+    .document-meta-info p {
+      font-size: 0.9em;
+      margin-bottom: 0.2rem;
+    }
+  }
+
+  .client-info-section, .shipping-address-section {
+    h6 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+    p.small .app-icon {
+      vertical-align: text-bottom;
+    }
+  }
+  .shipping-address-section p { // Adresse de livraison en un peu plus gras
+      font-weight: 500;
+  }
+
+
+  .notes-content {
+    border: 1px dashed var(--bs-border-color-translucent);
+    background-color: var(--bs-gray-100) !important;
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-bottom: 0;
+      font-family: inherit;
+      font-size: inherit;
+    }
+  }
+
+  .document-footer-section {
+    border-top: 1px solid #dee2e6;
+    a {
+        text-decoration: none;
+        color: var(--bs-link-color);
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+  }
+}
+
+// Styles spécifiques pour la vue PDF, partagés avec QuoteView.scss si possible
+.delivery-note-view-wrapper.pdf-view {
+  font-size: 9.5pt; // Ajuster pour lisibilité PDF
+  color: #000;
+
+  .document-view-card { // Surcharger la classe générique pour PDF
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .document-header-section, .document-footer-section {
+      background-color: transparent !important;
+  }
+  .bg-light {
+      background-color: transparent !important;
+  }
+  .text-muted {
+      color: #555 !important;
+  }
+}
+
+// Styles pour DocumentItemListReadOnly
+.document-item-list-container {
+  .document-item-list-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--bs-emphasis-color);
+  }
+  .document-items-table {
+    font-size: 0.875rem;
+    th {
+      white-space: nowrap;
+      background-color: var(--bs-gray-100); // En-tête de table des items un peu différent
+      padding: 0.5rem 0.75rem;
+    }
+    td {
+      vertical-align: top; // Mieux si descriptions longues
+      padding: 0.5rem 0.75rem;
+    }
+  }
+}

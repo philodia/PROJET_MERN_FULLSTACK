@@ -1,0 +1,59 @@
+// frontend/src/components/invoices/InvoiceView.scss
+// Peut largement réutiliser les styles de _document-view.scss (créé pour QuoteView et DeliveryNoteView)
+
+// Importer les styles communs des documents si vous en avez
+// @import '../common/styles/_document-view.scss';
+
+.invoice-view-wrapper {
+  // Styles spécifiques à la facture si nécessaire, en plus de .document-view-card
+
+  .document-header-section {
+    .document-title {
+      color: var(--bs-danger); // Factures souvent en rouge ou une couleur distinctive
+    }
+  }
+
+  .payment-terms {
+    font-style: italic;
+    // margin-bottom: 1rem;
+  }
+
+  .bank-details-section {
+    border-top: 1px dashed var(--bs-border-color-translucent);
+    padding-top: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.85em;
+  }
+
+  // Styles spécifiques PDF (peuvent être dans _document-view.scss)
+  &.pdf-view {
+    // ... (styles PDF comme dans QuoteView.scss)
+    .document-title {
+      color: black !important; // Assurer la lisibilité en noir et blanc
+    }
+  }
+}
+
+// Dans InvoiceView.scss ou un fichier d'impression global
+.invoice-view-wrapper.pdf-view {
+  // Styles pour une page A4 (environ 210mm x 297mm)
+  // width: 21cm;
+  // min-height: 29.7cm; // Peut être géré par le contenu
+  padding: 1cm; // Marges typiques
+  font-size: 10pt; // Taille de police commune pour les documents
+  background-color: white !important;
+  color: black !important;
+
+  .card, .document-view-card { // Enlever les bordures et ombres des cartes
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .text-muted {
+    color: #555 !important;
+  }
+  // Cacher les éléments interactifs non pertinents pour un PDF
+  button, .btn, .action-buttons-to-hide {
+    display: none !important;
+  }
+}

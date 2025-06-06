@@ -1,0 +1,38 @@
+// frontend/src/components/securityLogs/SecurityLogListItem.scss
+
+.security-log-list-item {
+  &.list-group-item-action {
+    &:hover, &:focus, &:focus-within {
+      background-color: var(--bs-list-group-action-hover-bg, #f0f0f0);
+    }
+  }
+
+  .log-main-info {
+    min-width: 0; // Pour que text-overflow fonctionne sur les enfants
+  }
+
+  .log-action-user {
+    .badge {
+      font-size: 0.75em;
+      vertical-align: middle;
+    }
+    .log-user {
+      font-size: 0.9em;
+      color: var(--bs-emphasis-color);
+    }
+  }
+
+  .log-details {
+    // white-space: nowrap; // Si vous voulez toujours une seule ligne
+    // overflow: hidden;
+    // text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+
+  .log-meta-info {
+    flex-shrink: 0; // Empêcher de rétrécir
+     .log-ip {
+        font-size: 0.85em;
+     }
+  }
+}

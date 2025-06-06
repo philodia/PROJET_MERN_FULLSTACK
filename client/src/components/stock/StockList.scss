@@ -1,0 +1,38 @@
+// frontend/src/components/stock/StockList.scss (ou un fichier plus global)
+
+.stock-list-container {
+  // Styles spécifiques pour le conteneur de la liste de stock si nécessaire
+}
+
+// Styles pour la barre de progression du stock
+.stock-progress {
+  // Bootstrap ProgressBar a déjà des styles, mais on peut les surcharger
+  &.progress { // Cibler la classe externe de ProgressBar
+    // background-color: #e9ecef; // Fond neutre si besoin
+  }
+  .progress-bar {
+    // Styles pour la barre elle-même
+    font-weight: 500;
+    color: #fff; // Assurer la lisibilité du label
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+  }
+
+  // Animation pour les stocks critiques
+  &.pulsate-progress {
+    .progress-bar.bg-danger, .progress-bar.bg-warning { // Cibler seulement les barres critiques
+      animation: stock-pulse-bar 2s infinite ease-in-out;
+    }
+  }
+}
+
+@keyframes stock-pulse-bar {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
