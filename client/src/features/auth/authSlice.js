@@ -1,89 +1,123 @@
 // frontend/src/features/auth/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-// Supposons que vos fonctions API sont définies ici :
 import {
   loginUser as loginApi,
   registerUser as registerApi,
   fetchCurrentUser as fetchCurrentUserApi,
-  // logoutUser as logoutApi, // Si votre logout backend nécessite un appel API
-} from '../../api/auth.api'; // Assurez-vous que le chemin est correct
+  // logoutUser as logoutApiCall, // Si vous avez un appel API pour le logout
+} from '../../api/auth.api'; // Ajustez si nécessaire
 
-// Récupérer le token du localStorage pour l'état initial
+// Fonction utilitaire pour parser l'utilisateur depuis localStorage
+const getUserFromLocalStorage = () => {
+  try {
+    const storedUser = localStorage.getItem('authUser');
+    return storedUser ? JSON.parse(storedUser) : null;
+  } catch (e) {
+    console.error("AuthSlice: Erreur parsing utilisateur depuis localStorage", e);
+    localStorage.removeItem('authUser');
+    return null;
+  }
+};
+
 const token = localStorage.getItem('authToken');
+const user = getUserFromLocalStorage();
 
 const initialState = {
-  user: null,
+  user: user,
   token: token,
-  isAuthenticated: false,
+  isAuthenticated: !!token && !!user, // True si token ET user (parsé avec succès) sont présents
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 };
 
-// Thunk asynchrone pour la connexion de l'utilisateur
+const handleAuthSuccess = (state, action) => {
+  state.status = 'succeeded';
+  state.user = action.payload.user;
+  state.token = action.payload.token;
+  state.isAuthenticated = true;
+  state.error = null;
+  // localStorage est géré dans le thunk pour éviter de le faire dans le reducer (effet de bord)
+};
+
+const handleAuthFailure = (state, action, isLoadUser = false) => {
+  state.status = 'failed';
+  state.error = action.payload;
+  state.user = null;
+  state.token = null;
+  state.isAuthenticated = false;
+  // localStorage est nettoyé dans le thunk
+};
+
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const data = await loginApi(credentials); // Attend { user, token }
+      const data = await loginApi(credentials);
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('authUser', JSON.stringify(data.user));
       return data;
     } catch (error) {
-      // L'intercepteur Axios devrait déjà avoir formaté l'erreur
-      // error est probablement un objet avec une propriété `message` ou juste une chaîne de caractères
-      const errorMessage = error?.message || error || 'Échec de la connexion.';
+      const message = (error.response?.data?.message) || error.message || error.toString();
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      return rejectWithValue(errorMessage);
+      return rejectWithValue(message || 'Échec de la connexion.');
     }
   }
 );
 
-// Thunk asynchrone pour l'inscription de l'utilisateur
 export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const data = await registerApi(userData); // Attend { user, token }
+      const data = await registerApi(userData);
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('authUser', JSON.stringify(data.user));
       return data;
     } catch (error) {
-      const errorMessage = error?.message || error || 'Échec de l\'inscription.';
+      const message = (error.response?.data?.message) || error.message || error.toString();
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      return rejectWithValue(errorMessage);
+      return rejectWithValue(message || 'Échec de l\'inscription.');
     }
   }
 );
 
-// Thunk asynchrone pour charger l'utilisateur si un token existe (au démarrage de l'app par ex.)
 export const loadUser = createAsyncThunk(
   'auth/loadUser',
   async (_, { getState, rejectWithValue }) => {
-    const currentToken = getState().auth.token;
+    const currentToken = getState().auth.token; // Ou selectAuthToken(getState())
     if (!currentToken) {
-      return rejectWithValue('Aucun token trouvé.');
+      return rejectWithValue('Aucun token, chargement utilisateur annulé.');
     }
     try {
-      const user = await fetchCurrentUserApi(); // Attend l'objet utilisateur
-      localStorage.setItem('authUser', JSON.stringify(user));
-      return user;
+      const fetchedUser = await fetchCurrentUserApi();
+      localStorage.setItem('authUser', JSON.stringify(fetchedUser));
+      return fetchedUser; // Retourne seulement l'utilisateur, le token est déjà dans l'état
     } catch (error) {
-      const errorMessage = error?.message || error || 'Échec du chargement de l\'utilisateur.';
-      // Si le chargement de l'utilisateur échoue (token invalide), nettoyez
+      const message = (error.response?.data?.message) || error.message || error.toString();
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      return rejectWithValue(errorMessage);
+      return rejectWithValue(message || 'Session invalide ou expirée.');
     }
   }
 );
+
+// Si vous avez un logout API :
+// export const logoutUserApi = createAsyncThunk('auth/logoutUserApi', async (_, { dispatch }) => {
+//   try {
+//     await logoutApiCall();
+//   } catch (e) { console.error("Logout API call failed but proceeding with client logout", e); }
+//   // Dans tous les cas, on déconnecte côté client
+//   dispatch(performLogout()); // Action synchrone pour nettoyer l'état
+// });
+
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout(state) {
+    // Renommé pour clarté si logoutUserApi existe
+    performLogout(state) {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
@@ -91,93 +125,57 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      // Si votre logout backend nécessite un appel API et renvoie qqc, vous pourriez vouloir un thunk
-      // await logoutApi(); // Par exemple
     },
     clearError(state) {
       state.error = null;
       if (state.status === 'failed') {
-        state.status = 'idle'; // Remettre à idle si l'erreur est effacée
+        state.status = 'idle';
       }
     },
-    // Si vous avez besoin de mettre à jour manuellement l'utilisateur (ex: après modification du profil)
     updateUser(state, action) {
-        if (state.isAuthenticated && state.user) {
-            state.user = { ...state.user, ...action.payload };
-            localStorage.setItem('authUser', JSON.stringify(state.user));
-        }
-    }
+      if (state.user && action.payload) { // S'assurer que user et payload existent
+        state.user = { ...state.user, ...action.payload };
+        localStorage.setItem('authUser', JSON.stringify(state.user));
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
       // Login
-      .addCase(login.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(login.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; // Message d'erreur de rejectWithValue
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-      })
+      .addCase(login.pending, (state) => { state.status = 'loading'; state.error = null; })
+      .addCase(login.fulfilled, handleAuthSuccess)
+      .addCase(login.rejected, handleAuthFailure)
       // Register
-      .addCase(register.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(register.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-      })
+      .addCase(register.pending, (state) => { state.status = 'loading'; state.error = null; })
+      .addCase(register.fulfilled, handleAuthSuccess)
+      .addCase(register.rejected, handleAuthFailure)
       // Load User
-      .addCase(loadUser.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-        // Ne pas changer isAuthenticated ici, car on ne sait pas encore si le token est valide
-      })
-      .addCase(loadUser.fulfilled, (state, action) => {
+      .addCase(loadUser.pending, (state) => { state.status = 'loading'; state.error = null; })
+      .addCase(loadUser.fulfilled, (state, action) => { // Action.payload est `fetchedUser`
         state.status = 'succeeded';
-        state.user = action.payload; // L'utilisateur retourné par /api/auth/me
-        // state.token est déjà défini depuis localStorage
-        state.isAuthenticated = true;
+        state.user = action.payload;
+        state.isAuthenticated = true; // Le token était valide
         state.error = null;
       })
-      .addCase(loadUser.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; // Message d'erreur si le token est invalide ou autre
-        state.user = null;
-        state.token = null; // Token invalidé, le supprimer
-        state.isAuthenticated = false;
-      });
+      .addCase(loadUser.rejected, (state, action) => handleAuthFailure(state, action, true));
+      // Si logoutUserApi est utilisé :
+      // .addCase(logoutUserApi.pending, (state) => { state.status = 'loading'; })
+      // .addCase(logoutUserApi.fulfilled, (state) => { /* état déjà nettoyé par performLogout */ })
+      // .addCase(logoutUserApi.rejected, (state) => { /* état déjà nettoyé par performLogout */ });
   },
 });
 
-export const { logout, clearError, updateUser } = authSlice.actions;
+// Renommer l'action exportée pour éviter confusion si logoutUserApi existe
+export const { performLogout: logout, clearError, updateUser } = authSlice.actions;
+// Si pas de logout API, garder : export const { logout, clearError, updateUser } = authSlice.actions;
 
 // Sélecteurs
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthToken = (state) => state.auth.token;
-export const selectAuthStatus = (state) => state.auth.status; // 'idle', 'loading', 'succeeded', 'failed'
+export const selectAuthStatus = (state) => state.auth.status;
 export const selectAuthError = (state) => state.auth.error;
+// Sélecteur booléen pour isLoading, dérivé de status
+export const selectAuthIsLoading = (state) => state.auth.status === 'loading';
 
 export default authSlice.reducer;

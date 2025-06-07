@@ -1,231 +1,220 @@
 // frontend/src/features/users/userSlice.js
 import { createSlice, createAsyncThunk, createEntityAdapter } from '@reduxjs/toolkit';
 import {
-  fetchUsers as fetchUsersApi,
+  fetchUsers as fetchUsersApi, // Supposons que cette API est pour les admins
   fetchUserById as fetchUserByIdApi,
   createUser as createUserApi,
   updateUser as updateUserApi,
   deleteUser as deleteUserApi,
-  // setUserStatus as setUserStatusApi, // Si vous l'implémentez
-} from '../../api/user.api.js'; // Assurez-vous que le chemin est correct
+  // setUserStatus as setUserStatusApi,
+} from '../../api/user.api.js';
 
-// createEntityAdapter aide à gérer les données normalisées (recommandé pour les listes)
 const usersAdapter = createEntityAdapter({
-  // Suppose que chaque utilisateur a un champ `_id` ou `id`
-  selectId: (user) => user._id || user.id,
-  // Garder l'ordre de tri par défaut (par exemple, par date de création ou nom d'utilisateur)
-  // sortComparer: (a, b) => a.username.localeCompare(b.username),
+  selectId: (user) => user._id, // Mongoose utilise _id par défaut
+  // sortComparer: (a, b) => a.username.localeCompare(b.username), // Optionnel
 });
+
+// État initial pour la pagination, pourrait être extrait si partagé par plusieurs slices
+const initialPaginationState = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0, // Renommé totalUsers en totalItems pour plus de généricité
+  limit: 10,
+};
 
 const initialState = usersAdapter.getInitialState({
-  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed' | 'action_loading' (pour CUD)
   error: null,
-  currentUser: null, // Pour stocker l'utilisateur en cours d'édition ou de visualisation détaillée
-  pagination: { // Pour stocker les informations de pagination de fetchUsersApi
-    currentPage: 1,
-    totalPages: 1,
-    totalUsers: 0,
-    limit: 10, // Limite par défaut
-  },
+  currentUserDetail: null, // Pour stocker l'utilisateur actuellement visualisé/édité en détail
+  pagination: initialPaginationState,
 });
 
-// Thunks asynchrones
-export const getUsers = createAsyncThunk(
-  'users/getUsers',
-  async (params = {}, { rejectWithValue }) => {
+// --- THUNKS (Renommés pour clarté dans un contexte admin) ---
+export const fetchUsersAdmin = createAsyncThunk(
+  'users/fetchUsersAdmin', // Nom d'action unique
+  async (params = { page: 1, limit: 10 }, { rejectWithValue }) => {
     try {
-      const data = await fetchUsersApi(params);
-      return data; // Attend { users: [...], totalPages, currentPage, totalUsers }
+      const data = await fetchUsersApi(params); // API doit retourner { data: [], totalPages, currentPage, totalItems, limit }
+      return data;
     } catch (error) {
-      return rejectWithValue(error.message || 'Failed to fetch users');
+      return rejectWithValue(error.response?.data || { message: error.message || 'Failed to fetch users' });
     }
   }
 );
 
-export const getUserById = createAsyncThunk(
-  'users/getUserById',
+export const fetchUserByIdAdmin = createAsyncThunk(
+  'users/fetchUserByIdAdmin',
   async (userId, { rejectWithValue }) => {
     try {
-      const data = await fetchUserByIdApi(userId);
-      return data; // Attend l'objet utilisateur
+      const user = await fetchUserByIdApi(userId);
+      return user;
     } catch (error) {
-      return rejectWithValue(error.message || `Failed to fetch user ${userId}`);
+      return rejectWithValue(error.response?.data || { message: error.message || `Failed to fetch user ${userId}` });
     }
   }
 );
 
-export const addNewUser = createAsyncThunk(
-  'users/addNewUser',
+export const createUserAdmin = createAsyncThunk(
+  'users/createUserAdmin',
   async (userData, { rejectWithValue }) => {
     try {
-      const data = await createUserApi(userData);
-      return data; // Attend l'utilisateur créé
+      const newUser = await createUserApi(userData);
+      return newUser;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message || 'Failed to create user');
+      return rejectWithValue(error.response?.data || { message: error.message || 'Failed to create user' });
     }
   }
 );
 
-export const editUser = createAsyncThunk(
-  'users/editUser',
+export const updateUserAdmin = createAsyncThunk(
+  'users/updateUserAdmin',
   async ({ userId, userData }, { rejectWithValue }) => {
     try {
-      const data = await updateUserApi(userId, userData);
-      return data; // Attend l'utilisateur mis à jour
+      const updatedUser = await updateUserApi(userId, userData);
+      return updatedUser;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message || 'Failed to update user');
+      return rejectWithValue(error.response?.data || { message: error.message || 'Failed to update user' });
     }
   }
 );
 
-export const removeUser = createAsyncThunk(
-  'users/removeUser',
+export const deleteUserAdmin = createAsyncThunk(
+  'users/deleteUserAdmin',
   async (userId, { rejectWithValue }) => {
     try {
       await deleteUserApi(userId);
-      return userId; // Retourne l'ID de l'utilisateur supprimé pour le retirer du state
+      return userId;
     } catch (error) {
-      return rejectWithValue(error.message || 'Failed to delete user');
+      return rejectWithValue(error.response?.data || { message: error.message || 'Failed to delete user' });
     }
   }
 );
 
-// export const toggleUserStatus = createAsyncThunk(
-//   'users/toggleUserStatus',
-//   async ({ userId, isActive }, { rejectWithValue }) => {
-//     try {
-//       const data = await setUserStatusApi(userId, isActive);
-//       return data; // Attend l'utilisateur mis à jour
-//     } catch (error) {
-//       return rejectWithValue(error.message || 'Failed to update user status');
-//     }
-//   }
-// );
-
+// --- USER SLICE ---
 const userSlice = createSlice({
-  name: 'users',
+  name: 'usersAdmin', // Nom de slice plus spécifique si ce slice est pour l'admin
   initialState,
   reducers: {
-    setCurrentUser(state, action) {
-      state.currentUser = action.payload;
+    setCurrentUserDetail(state, action) {
+      state.currentUserDetail = action.payload;
     },
-    clearCurrentUser(state) {
-      state.currentUser = null;
+    clearCurrentUserDetail(state) {
+      state.currentUserDetail = null;
     },
-    clearUserError(state) {
+    clearUserAdminError(state) {
       state.error = null;
       if (state.status === 'failed') state.status = 'idle';
     },
-    // Vous pouvez ajouter des reducers pour gérer localement la pagination ou les filtres si nécessaire
-    setUserListPage(state, action) {
+    setUserAdminPage(state, action) { // Pourrait être utilisé par la pagination si on veut un contrôle client
         state.pagination.currentPage = action.payload;
     }
   },
   extraReducers: (builder) => {
     builder
-      // Get Users
-      .addCase(getUsers.pending, (state) => {
+      // Fetch Users Admin
+      .addCase(fetchUsersAdmin.pending, (state) => {
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(getUsers.fulfilled, (state, action) => {
+      .addCase(fetchUsersAdmin.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        usersAdapter.setAll(state, action.payload.users); // Remplace tous les utilisateurs
+        usersAdapter.setAll(state, action.payload.data); // API renvoie { data: [...], ... }
         state.pagination.currentPage = action.payload.currentPage;
         state.pagination.totalPages = action.payload.totalPages;
-        state.pagination.totalUsers = action.payload.totalUsers;
+        state.pagination.totalItems = action.payload.totalItems;
         state.pagination.limit = action.payload.limit || state.pagination.limit;
       })
-      .addCase(getUsers.rejected, (state, action) => {
+      .addCase(fetchUsersAdmin.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
+        usersAdapter.removeAll(state); // Optionnel: vider la liste en cas d'erreur de fetch
+        state.pagination = initialPaginationState; // Réinitialiser la pagination
       })
-      // Get User By Id
-      .addCase(getUserById.pending, (state) => {
-        state.status = 'loading';
-        state.currentUser = null; // Effacer le précédent
+
+      // Fetch User By Id Admin
+      .addCase(fetchUserByIdAdmin.pending, (state) => {
+        state.status = 'loading'; // Ou un statut 'loading_detail'
+        state.currentUserDetail = null;
         state.error = null;
       })
-      .addCase(getUserById.fulfilled, (state, action) => {
+      .addCase(fetchUserByIdAdmin.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.currentUser = action.payload;
+        state.currentUserDetail = action.payload;
       })
-      .addCase(getUserById.rejected, (state, action) => {
+      .addCase(fetchUserByIdAdmin.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       })
-      // Add New User
-      .addCase(addNewUser.fulfilled, (state, action) => {
-        usersAdapter.addOne(state, action.payload); // Ajoute le nouvel utilisateur à la liste
-        // Optionnel: Mettre à jour totalUsers si la pagination n'est pas rechargée immédiatement
-        state.pagination.totalUsers += 1;
-        state.status = 'succeeded'; // Peut-être définir un statut spécifique pour la création
+
+      // Create User Admin
+      .addCase(createUserAdmin.pending, (state) => {
+        state.status = 'action_loading'; // Statut spécifique pour les actions CUD
+        state.error = null;
       })
-      .addCase(addNewUser.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; // Contient souvent des erreurs de validation du backend
-      })
-      // Edit User
-      .addCase(editUser.fulfilled, (state, action) => {
-        usersAdapter.upsertOne(state, action.payload); // Met à jour l'utilisateur dans la liste
-        if (state.currentUser && (state.currentUser._id === action.payload._id || state.currentUser.id === action.payload.id) ) {
-          state.currentUser = action.payload; // Met à jour currentUser s'il s'agit du même utilisateur
-        }
+      .addCase(createUserAdmin.fulfilled, (state, action) => {
         state.status = 'succeeded';
+        usersAdapter.addOne(state, action.payload);
+        state.pagination.totalItems = (state.pagination.totalItems || 0) + 1;
+        // Pourrait aussi rafraîchir la page actuelle ou aller à la dernière page
       })
-       .addCase(editUser.rejected, (state, action) => {
+      .addCase(createUserAdmin.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload; // Erreurs de validation du backend
+      })
+
+      // Update User Admin
+      .addCase(updateUserAdmin.pending, (state) => {
+        state.status = 'action_loading';
+        state.error = null;
+      })
+      .addCase(updateUserAdmin.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        usersAdapter.upsertOne(state, action.payload);
+        if (state.currentUserDetail && state.currentUserDetail._id === action.payload._id) {
+          state.currentUserDetail = action.payload;
+        }
+      })
+      .addCase(updateUserAdmin.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       })
-      // Remove User
-      .addCase(removeUser.fulfilled, (state, action) => {
-        usersAdapter.removeOne(state, action.payload); // Retire l'utilisateur de la liste par son ID
-        state.pagination.totalUsers -= 1;
-        state.status = 'succeeded';
+
+      // Delete User Admin
+      .addCase(deleteUserAdmin.pending, (state) => {
+        state.status = 'action_loading';
+        state.error = null;
       })
-      // Toggle User Status (si implémenté)
-      // .addCase(toggleUserStatus.fulfilled, (state, action) => {
-      //   usersAdapter.upsertOne(state, action.payload);
-      //   if (state.currentUser && state.currentUser._id === action.payload._id) {
-      //     state.currentUser = action.payload;
-      //   }
-      // })
-      // Gestion générique des états pending et rejected pour les mutations (add, edit, remove)
-      // pour éviter la duplication si vous ne voulez pas de logique spécifique pour chaque
-      .addMatcher(
-        (action) => [addNewUser.pending, editUser.pending, removeUser.pending].includes(action.type),
-        (state) => {
-          state.status = 'loading';
-          state.error = null;
+      .addCase(deleteUserAdmin.fulfilled, (state, action) => { // action.payload est userId
+        state.status = 'succeeded';
+        usersAdapter.removeOne(state, action.payload);
+        state.pagination.totalItems = Math.max(0, (state.pagination.totalItems || 0) - 1);
+        if (state.currentUserDetail && state.currentUserDetail._id === action.payload) {
+          state.currentUserDetail = null; // Effacer si l'utilisateur supprimé était affiché en détail
         }
-      )
-      // Si addNewUser.rejected ou editUser.rejected ont déjà des handlers spécifiques,
-      // ce .addMatcher pour .rejected ne sera pas nécessaire ou devra être plus spécifique.
-      // .addMatcher(
-      //   (action) => [addNewUser.rejected, editUser.rejected, removeUser.rejected].includes(action.type),
-      //   (state, action) => {
-      //     if (state.status === 'loading') { // Seulement si on était en train de charger cette action spécifique
-      //       state.status = 'failed';
-      //       state.error = action.payload;
-      //     }
-      //   }
-      // );
+      })
+      .addCase(deleteUserAdmin.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      });
   },
 });
 
-export const { setCurrentUser, clearCurrentUser, clearUserError, setUserListPage } = userSlice.actions;
-
-// Sélecteurs exportés par createEntityAdapter
 export const {
-  selectAll: selectAllUsers,
-  selectById: selectUserByIdFromAdapter, // Renommé pour éviter conflit avec le thunk
-  selectIds: selectUserIds,
-} = usersAdapter.getSelectors((state) => state.users);
+  setCurrentUserDetail,
+  clearCurrentUserDetail,
+  clearUserAdminError,
+  setUserAdminPage
+} = userSlice.actions;
 
-// Sélecteurs personnalisés
-export const selectUserStatus = (state) => state.users.status;
-export const selectUserError = (state) => state.users.error;
-export const selectCurrentUserDetail = (state) => state.users.currentUser;
-export const selectUserPagination = (state) => state.users.pagination;
+export const {
+  selectAll: selectAllUsersAdmin, // Renommé pour clarté
+  selectById: selectUserByIdAdminFromAdapter,
+  selectIds: selectUserAdminIds,
+} = usersAdapter.getSelectors((state) => state.usersAdmin); // Utiliser le nom du slice
+
+export const selectUserAdminStatus = (state) => state.usersAdmin.status;
+export const selectUserAdminError = (state) => state.usersAdmin.error;
+export const selectCurrentUserAdminDetail = (state) => state.usersAdmin.currentUserDetail;
+export const selectUserAdminPagination = (state) => state.usersAdmin.pagination;
 
 export default userSlice.reducer;

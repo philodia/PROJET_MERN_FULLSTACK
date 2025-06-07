@@ -1,111 +1,122 @@
 // gestion-commerciale-app/backend/middleware/error.middleware.js
 
-const config = require('../config'); // Pour accéder à NODE_ENV
+// const config = require('../config'); // Remplacé par process.env
+// Si vous utilisez 'colors' : require('colors');
 
 /**
  * Classe d'erreur personnalisée pour gérer les erreurs HTTP avec un statut et un message.
  * @extends Error
  */
 class AppError extends Error {
-  /**
-   * Crée une instance de AppError.
-   * @param {string} message - Le message d'erreur.
-   * @param {number} statusCode - Le code de statut HTTP.
-   */
   constructor(message, statusCode) {
-    super(message); // Appelle le constructeur de la classe Error parente
+    super(message);
     this.statusCode = statusCode;
-    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error'; // 'fail' pour les erreurs client, 'error' pour les erreurs serveur
-    this.isOperational = true; // Pour distinguer les erreurs opérationnelles des erreurs de programmation
+    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true; // Indique que c'est une erreur attendue/gérée
 
-    Error.captureStackTrace(this, this.constructor); // Capture la pile d'appels correcte
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
 /**
  * Middleware pour gérer les routes non trouvées (404).
- * Ce middleware est appelé si aucune autre route ne correspond à la requête.
  */
 const notFound = (req, res, next) => {
-  // const error = new Error(`Not Found - ${req.originalUrl}`);
-  // res.status(404);
-  // next(error); // Passe l'erreur au gestionnaire d'erreurs global
-  // OU utiliser AppError directement :
+  // Crée une nouvelle erreur AppError et la passe au prochain middleware (errorHandler)
   next(new AppError(`La route ${req.originalUrl} n'a pas été trouvée sur ce serveur.`, 404));
 };
 
 /**
  * Gestionnaire d'erreurs global.
- * Ce middleware est appelé chaque fois que `next(error)` est appelé dans l'application.
  */
 const errorHandler = (err, req, res, next) => {
-  let error = { ...err }; // Cloner l'erreur pour éviter de modifier l'original directement
+  // Définir le statusCode et le status par défaut si non présents sur l'erreur
+  // err.statusCode est défini si c'est une AppError ou une erreur d'une autre lib qui le définit
+  const statusCode = err.statusCode || 500;
+  const status = err.status || 'error'; // 'error' pour les erreurs serveur par défaut
 
-  error.message = err.message; // S'assurer que le message est bien copié
-  error.statusCode = err.statusCode || 500; // Code de statut par défaut à 500 (Internal Server Error)
-  error.status = err.status || 'error';
+  let message = err.message; // Utiliser le message de l'erreur originale par défaut
 
-  // Logguer l'erreur pour le débogage (surtout en développement)
-  if (config.NODE_ENV === 'development') {
-    console.error('💥 ERROR MIDDLEWARE 💥'.red);
-    console.error('Error Name:', err.name);
-    console.error('Error Message:', err.message);
-    // console.error('Error Status Code:', error.statusCode);
-    // console.error('Error Status:', error.status);
-    console.error('Error Stack:'.yellow, err.stack);
+  // Log de l'erreur originale complète en développement pour un meilleur débogage
+  if (process.env.NODE_ENV === 'development') {
+    console.error("💥 ERROR MIDDLEWARE 💥");
+    console.error("Error Name:", err.name);
+    console.error("Original Error Message:", err.message);
+    if (err.statusCode) console.error("Original Status Code:", err.statusCode);
+    if (err.status) console.error("Original Status:", err.status);
+    console.error("Error Stack:", err.stack);
+    if (err.keyValue) console.error("MongoDB keyValue (for duplicate error):", err.keyValue);
+    if (err.errors) console.error("Mongoose Validation Errors:", err.errors);
+
   }
 
-  // Gérer des erreurs Mongoose spécifiques pour des messages plus conviviaux
-  if (err.name === 'CastError') { // Erreur de cast Mongoose (ex: ID invalide)
-    const message = `Ressource non trouvée. Format d'ID invalide pour le champ '${err.path}' avec la valeur '${err.value}'.`;
-    error = new AppError(message, 400); // Bad Request
+  // Gestion des erreurs Mongoose spécifiques pour des messages plus conviviaux
+  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+    message = `Ressource non trouvée. L'identifiant fourni n'est pas au bon format.`;
+    // statusCode est déjà 500 par défaut, mais CastError est souvent une erreur client 400 ou 404
+    // On peut choisir de le mettre à 400 (Bad Request) car l'ID fourni est mal formé.
+    // Ou 404 si on considère que la ressource avec cet ID mal formé ne peut pas exister.
+    // Pour être cohérent avec AppError, si on recrée l'erreur, on doit aussi passer le statusCode.
+    // Il est plus simple de juste modifier le message et de laisser le statusCode par défaut (500)
+    // ou de le forcer à 400/404.
+    // Pour l'instant, on va juste changer le message et laisser le status code par défaut ou celui de l'erreur.
+    // Si on veut forcer, on ferait : return next(new AppError(message, 400));
+    // MAIS, pour éviter un appel récursif à errorHandler, on modifie directement les props de la réponse.
+    // On va donc plutôt créer une nouvelle AppError si on veut changer le code.
+    // Le plus simple est de modifier message et de laisser statusCode tel quel ou 500.
+    // Si on veut être plus précis :
+    return res.status(400).json({
+        status: 'fail',
+        message: `Format d'ID invalide pour le champ '${err.path}' avec la valeur '${err.value}'.`
+    });
   }
 
-  if (err.code === 11000) { // Erreur de duplicata Mongoose (champ unique)
-    const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0]; // Extrait la valeur dupliquée
+  if (err.code === 11000) { // Erreur de duplicata Mongoose
     const field = Object.keys(err.keyValue)[0];
-    const message = `La valeur ${value} pour le champ '${field}' existe déjà. Veuillez utiliser une autre valeur.`;
-    error = new AppError(message, 400); // Bad Request
+    const value = err.keyValue[field];
+    message = `La valeur '${value}' pour le champ '${field}' existe déjà. Veuillez en utiliser une autre.`;
+    return res.status(400).json({ status: 'fail', message }); // Bad Request
   }
 
   if (err.name === 'ValidationError') { // Erreur de validation Mongoose
     const errors = Object.values(err.errors).map(el => el.message);
-    const message = `Données d'entrée invalides. ${errors.join('. ')}`;
-    error = new AppError(message, 400); // Bad Request
+    message = `Données d'entrée invalides : ${errors.join('. ')}`;
+    return res.status(400).json({ status: 'fail', message }); // Bad Request
   }
 
-  if (err.name === 'JsonWebTokenError') { // Erreur JWT invalide
-    const message = 'Token invalide. Veuillez vous reconnecter.';
-    error = new AppError(message, 401); // Unauthorized
+  // Gestion des erreurs JWT
+  if (err.name === 'JsonWebTokenError') {
+    message = 'Token d\'authentification invalide. Veuillez vous reconnecter.';
+    return res.status(401).json({ status: 'fail', message }); // Unauthorized
   }
 
-  if (err.name === 'TokenExpiredError') { // Erreur JWT expiré
-    const message = 'Votre session a expiré. Veuillez vous reconnecter.';
-    error = new AppError(message, 401); // Unauthorized
+  if (err.name === 'TokenExpiredError') {
+    message = 'Votre session a expiré. Veuillez vous reconnecter.';
+    return res.status(401).json({ status: 'fail', message }); // Unauthorized
   }
 
-  // Envoyer la réponse d'erreur au client
-  if (config.NODE_ENV === 'production' && !error.isOperational) {
-    // Si c'est une erreur de programmation ou inconnue en production, ne pas fuiter les détails
-    console.error('💥 UNEXPECTED ERROR IN PRODUCTION 💥'.red.inverse, error);
+
+  // Pour les erreurs non opérationnelles en production, envoyer un message générique
+  if (process.env.NODE_ENV === 'production' && !err.isOperational) {
+    console.error('💥 UNEXPECTED ERROR IN PRODUCTION 💥', err); // Logguer l'erreur réelle pour les devs
     return res.status(500).json({
       status: 'error',
-      message: 'Quelque chose s\'est très mal passé ! Veuillez réessayer plus tard.',
+      message: 'Une erreur interne est survenue. Veuillez réessayer plus tard.',
     });
   }
 
-  // Pour les erreurs opérationnelles ou en développement, envoyer plus de détails
-  res.status(error.statusCode).json({
-    status: error.status,
-    message: error.message,
+  // Pour les erreurs opérationnelles (instances de AppError) ou en développement,
+  // envoyer le message d'erreur spécifique.
+  res.status(statusCode).json({
+    status: status,
+    message: message,
     // Afficher la pile d'appels uniquement en développement
-    stack: config.NODE_ENV === 'development' ? error.stack || err.stack : undefined,
-    // error: config.NODE_ENV === 'development' ? error : undefined, // Pour voir l'objet erreur complet en dev
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   });
 };
 
 module.exports = {
-  AppError, // Exporter la classe AppError pour pouvoir la lancer manuellement
+  AppError,
   notFound,
   errorHandler,
 };

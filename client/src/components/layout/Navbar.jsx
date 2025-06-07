@@ -1,17 +1,12 @@
 // frontend/src/components/layout/Navbar.jsx
+
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import Navbar from 'react-bootstrap/Navbar';
-import Nav from 'react-bootstrap/Nav';
-import NavDropdown from 'react-bootstrap/NavDropdown';
-import Container from 'react-bootstrap/Container';
-//import Image from 'react-bootstrap/Image'; // Pour le logo
-import { useAuth } from '../../hooks/useAuth'; // Ajustez le chemin
-import { logout as logoutAction } from '../../features/auth/authSlice'; // Ajustez le chemin
-import Icon from '../common/Icon'; // Votre composant Icon, optionnel
-
-// import logoImage from '../../assets/images/logo.png'; // Décommentez et ajustez si logo utilisé
+import { Navbar, Nav, NavDropdown, Container } from 'react-bootstrap';
+import { useAuth } from '../../hooks/useAuth';
+import { logout as logoutAction } from '../../features/auth/authSlice';
+import Icon from '../common/Icon';
 
 const AppNavbar = () => {
   const { user, isAuthenticated, isAdmin, hasRole } = useAuth();
@@ -27,7 +22,6 @@ const AppNavbar = () => {
     <Navbar bg="light" expand="lg" className="app-navbar shadow-sm mb-3">
       <Container fluid>
         <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-          {/* <Image src={logoImage} alt="Logo GestionApp" height="30" className="me-2" /> */}
           <Icon name="BsKanban" size="1.5em" className="me-2" color="var(--bs-primary)" />
           GestionApp
         </Navbar.Brand>
@@ -102,7 +96,6 @@ const AppNavbar = () => {
             )}
           </Nav>
 
-          {/* Section utilisateur à droite */}
           <Nav>
             {isAuthenticated && user ? (
               <NavDropdown
@@ -135,10 +128,10 @@ const AppNavbar = () => {
                 </NavDropdown.Item>
               </NavDropdown>
             ) : (
-              <Nav.Link as={NavLink} to="/login">
+              {/*<Nav.Link as={NavLink} to="/login">
                 <Icon name="BsBoxArrowInRight" className="me-1" />
                 Connexion
-              </Nav.Link>
+              </Nav.Link>*/}
             )}
           </Nav>
         </Navbar.Collapse>

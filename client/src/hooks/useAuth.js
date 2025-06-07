@@ -1,66 +1,63 @@
 // frontend/src/hooks/useAuth.js
 import { useSelector } from 'react-redux';
+import { useMemo, useCallback } from 'react';
+
 import {
   selectCurrentUser,
   selectIsAuthenticated,
   selectAuthToken,
-  selectAuthIsLoading,
+  selectAuthStatus,
   selectAuthError,
-} from '../features/auth/authSlice'; // Assurez-vous que le chemin est correct
+} from '../features/auth/authSlice';
 
 /**
  * Hook personnalisé pour accéder à l'état d'authentification et aux informations de l'utilisateur.
- *
- * @returns {object} Un objet contenant :
- *  - `user`: Les informations de l'utilisateur connecté (ou null).
- *  - `isAuthenticated`: Un booléen indiquant si l'utilisateur est authentifié.
- *  - `token`: Le token d'authentification (ou null).
- *  - `isLoading`: Un booléen indiquant si l'état d'authentification est en cours de chargement.
- *  - `error`: L'erreur d'authentification (ou null).
- *  - `isAdmin`: Un booléen indiquant si l'utilisateur a le rôle 'ADMIN'.
- *  - `isManager`: Un booléen indiquant si l'utilisateur a le rôle 'MANAGER'.
- *  - `isAccountant`: Un booléen indiquant si l'utilisateur a le rôle 'ACCOUNTANT'.
- *  - `hasRole(roleOrRoles)`: Une fonction pour vérifier si l'utilisateur a un rôle spécifique ou l'un des rôles d'un tableau.
  */
 export const useAuth = () => {
   const user = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const token = useSelector(selectAuthToken);
-  const isLoading = useSelector(selectAuthIsLoading);
+  const authStatus = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
 
-  // Fonctions utilitaires pour vérifier les rôles (ajustez les noms des rôles si nécessaire)
-  const isAdmin = !!user && user.role === 'ADMIN';
-  const isManager = !!user && user.role === 'MANAGER';
-  const isAccountant = !!user && user.role === 'ACCOUNTANT';
+  const isLoading = useMemo(() => authStatus === 'loading', [authStatus]);
+
+  const isAdmin = useMemo(() => !!user && user.role === 'ADMIN', [user]);
+  const isManager = useMemo(() => !!user && user.role === 'MANAGER', [user]);
+  const isAccountant = useMemo(() => !!user && user.role === 'ACCOUNTANT', [user]);
+  const isUserRole = useMemo(() => !!user && user.role === 'USER', [user]);
 
   /**
-   * Vérifie si l'utilisateur actuel a un rôle spécifique ou l'un des rôles d'un tableau.
-   * @param {string|string[]} roleOrRoles - Le rôle (chaîne) ou un tableau de rôles à vérifier.
+   * Vérifie si l'utilisateur actuel a un rôle spécifique ou un des rôles d'un tableau.
+   * @param {string|string[]} roleOrRolesToCheck - Le rôle (chaîne) ou un tableau de rôles à vérifier.
    * @returns {boolean} True si l'utilisateur a le rôle requis, false sinon.
    */
-  const hasRole = (roleOrRoles) => {
-    if (!user || !user.role) {
-      return false;
-    }
-    if (Array.isArray(roleOrRoles)) {
-      return roleOrRoles.includes(user.role);
-    }
-    return user.role === roleOrRoles;
-  };
+  const hasRole = useCallback(
+    (roleOrRolesToCheck) => {
+      if (!user || !user.role) return false;
+
+      const currentUserRole = user.role;
+
+      if (Array.isArray(roleOrRolesToCheck)) {
+        return roleOrRolesToCheck.includes(currentUserRole);
+      }
+
+      return currentUserRole === roleOrRolesToCheck;
+    },
+    [user]
+  );
 
   return {
     user,
     isAuthenticated,
     token,
     isLoading,
+    authStatus,
     error,
     isAdmin,
     isManager,
     isAccountant,
+    isUserRole,
     hasRole,
   };
 };
-
-// Vous pouvez aussi exporter directement la fonction si vous préférez
-// export default useAuth;

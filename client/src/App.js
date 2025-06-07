@@ -1,56 +1,64 @@
-// src/App.js
+// frontend/src/App.js
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider, useDispatch } from 'react-redux'; // useDispatch pour AppContent
 import { store } from './app/store';
-import AppRoutes from './router';
-import { getSocket, subscribeToEvent } from './app/socket';
+import AppRouter from './router';
+
+// Thunks/Actions pour le chargement initial
+import { loadUser } from './features/auth/authSlice';
+import { loadTheme } from './features/ui/uiSlice'; // Si vous avez un uiSlice pour le thème
+
+// Notifications Toast
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Optionnel : import global de vos styles
-// import './assets/scss/global.scss'; // ou './index.css'
+// CSS Globaux
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './assets/scss/global.scss'; // Votre SCSS global personnalisé
+
+// (Optionnel) ErrorBoundary
+// import ErrorBoundary from './components/common/ErrorBoundary';
+
+
+// Composant interne pour pouvoir utiliser les hooks Redux (useDispatch)
+const AppInitializer = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Tenter de charger l'utilisateur à partir du token stocké
+    dispatch(loadUser());
+    // Charger le thème persisté (si applicable)
+    dispatch(loadTheme());
+    // Vous pourriez ajouter d'autres initialisations ici (ex: configuration de l'application depuis une API)
+  }, [dispatch]);
+
+  return <AppRouter />;
+};
 
 function App() {
-  useEffect(() => {
-    const socket = getSocket();
-
-    if (!socket) {
-      console.warn('Socket non initialisé.');
-      return;
-    }
-
-    // Exemple : abonnement à un événement personnalisé
-    const unsubscribeNotification = subscribeToEvent('global_notification', (data) => {
-      console.log('Notification globale reçue :', data);
-      // TODO : afficher une notification (ex: toast) ici
-    });
-
-    // Nettoyage lors du démontage
-    return () => {
-      unsubscribeNotification();
-      // socket.disconnect(); // décommente si tu veux couper la connexion à la sortie
-    };
-  }, []);
-
   return (
+    // <React.StrictMode> // Décommentez si vous voulez activer le mode strict ici
     <Provider store={store}>
-      <Router>
-        <AppRoutes />
+      <BrowserRouter>
+        {/* <ErrorBoundary fallbackMessage="Une erreur inattendue est survenue."> */}
+          <AppInitializer />
+        {/* </ErrorBoundary> */}
         <ToastContainer
           position="top-right"
           autoClose={5000}
           hideProgressBar={false}
-          newestOnTop={false}
+          newestOnTop={true} // Les nouveaux toasts apparaissent en haut
           closeOnClick
           rtl={false}
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          theme="colored"
+          theme="colored" // 'light', 'dark', ou 'colored' pour utiliser les couleurs de type de toast
         />
-      </Router>
+      </BrowserRouter>
     </Provider>
+    // </React.StrictMode>
   );
 }
 

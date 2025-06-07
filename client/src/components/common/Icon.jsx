@@ -1,120 +1,124 @@
 // frontend/src/components/common/Icon.jsx
 import React from 'react';
 import PropTypes from 'prop-types';
-// Importez les sets d'icônes que vous prévoyez d'utiliser le plus.
-// Exemple avec FontAwesome (fa) et Material Design Icons (md)
 import * as FaIcons from 'react-icons/fa';
 import * as MdIcons from 'react-icons/md';
 import * as BsIcons from 'react-icons/bs'; // Bootstrap Icons
 import * as RiIcons from 'react-icons/ri'; // Remix Icon
-// Ajoutez d'autres bibliothèques au besoin (ex: AiOutlineAntDesign, FiFeather)
+// Exemple pour d'autres bibliothèques :
+// import * as AiIcons from 'react-icons/ai'; // Ant Design Icons
+// import * as FiIcons from 'react-icons/fi'; // Feather Icons
 
-// Mappage des préfixes de bibliothèques aux objets d'icônes importés
 const iconLibraries = {
   fa: FaIcons,
   md: MdIcons,
   bs: BsIcons,
   ri: RiIcons,
-  // Ajoutez d'autres préfixes ici si vous importez d'autres bibliothèques
-  // exemple: ai: AiIcons, fi: FiIcons,
+  // ai: AiIcons, // Décommentez et importez si vous les utilisez
+  // fi: FiIcons,
 };
 
-/**
- * Composant wrapper pour afficher des icônes de différentes bibliothèques (via react-icons).
- *
- * @param {object} props - Les propriétés du composant.
- * @param {string} props.name - Le nom de l'icône (ex: 'FaUser', 'MdSettings', 'BsFillArchiveFill').
- *                              Le préfixe (Fa, Md, Bs) indique la bibliothèque.
- * @param {string} [props.lib='fa'] - Le préfixe de la bibliothèque d'icônes à utiliser par défaut si non spécifié dans 'name'.
- *                                   Supporté : 'fa', 'md', 'bs', 'ri'. (Extensible)
- * @param {string | number} [props.size] - La taille de l'icône (ex: '2em', 24).
- * @param {string} [props.color] - La couleur de l'icône.
- * @param {string} [props.className] - Classes CSS supplémentaires pour l'élément span wrapper.
- * @param {object} [props.style] - Styles en ligne supplémentaires pour l'élément span wrapper.
- * @param {string} [props.title] - Texte pour l'attribut title (tooltip natif du navigateur).
- * @param {function} [props.onClick] - Fonction à appeler lors du clic sur l'icône.
- */
+// Expression régulière pour détecter les préfixes de bibliothèque courants de react-icons
+const LIB_PREFIX_REGEX = /^(Fa|Md|Bs|Ri|Ai|Fi|Gi|Go|Gr|Im|Io|Io5|Si|Sl|Tb|Tfi|Ti|Vsc|Wi)/;
+
 const Icon = ({
   name,
-  lib, // Laisser lib optionnel pour déduire du nom de l'icône
+  lib,
   size,
   color,
   className = '',
   style = {},
   title,
   onClick,
-  ...otherProps // Pour d'autres props passées au composant icône lui-même
+  ...otherProps
 }) => {
+  // 1. Valider la prop 'name'
+  if (typeof name !== 'string' || !name.trim()) {
+    // console.warn('Icon: La prop "name" est requise et doit être une chaîne de caractères non vide.');
+    // Retourner null ou un placeholder si le nom est invalide.
+    // Pour l'erreur "Objects are not valid...", il est crucial de ne pas retourner un objet.
+    return null;
+  }
+
   let IconComponent;
-  let effectiveLibPrefix = lib;
+  let effectiveLibPrefix = lib ? lib.toLowerCase() : null; // Priorité à la prop 'lib' si fournie
+  let iconNameInLibrary = name;
 
-  // Essayer de déduire la bibliothèque du nom de l'icône s'il a un préfixe connu
-  if (name) {
-    const match = name.match(/^(Fa|Md|Bs|Ri|Ai|Fi|Gi|Go|Gr|Im|Io|Io5|Si|Sl|Tb|Tfi|Ti|Vsc|Wi)([A-Z0-9].*)/);
-    if (match && match[1]) {
-      effectiveLibPrefix = match[1].toLowerCase(); // ex: 'fa', 'md'
-      // Le nom de l'icône est déjà complet, pas besoin de le préfixer
+  // 2. Déterminer la bibliothèque et le nom de l'icône
+  const nameMatch = name.match(LIB_PREFIX_REGEX);
+  const detectedLibPrefixInName = nameMatch ? nameMatch[1].toLowerCase() : null;
+
+  if (effectiveLibPrefix) { // Si 'lib' est fournie
+    // Si 'name' contient un préfixe différent de 'lib', on le retire de 'name'
+    // et on reconstruit le nom avec le préfixe de 'lib'.
+    if (detectedLibPrefixInName && detectedLibPrefixInName !== effectiveLibPrefix) {
+      iconNameInLibrary = effectiveLibPrefix.charAt(0).toUpperCase() + effectiveLibPrefix.slice(1) + name.substring(detectedLibPrefixInName.length);
+    } else if (!detectedLibPrefixInName) { // Si 'name' n'a pas de préfixe, on ajoute celui de 'lib'
+      iconNameInLibrary = effectiveLibPrefix.charAt(0).toUpperCase() + effectiveLibPrefix.slice(1) + name;
     }
+    // Si detectedLibPrefixInName === effectiveLibPrefix, iconNameInLibrary (qui est name) est déjà correct.
+  } else if (detectedLibPrefixInName) { // Si 'lib' n'est pas fournie, mais 'name' a un préfixe
+    effectiveLibPrefix = detectedLibPrefixInName;
+    // iconNameInLibrary (qui est name) est déjà correct.
+  } else {
+    // Ni 'lib' fournie, ni préfixe détectable dans 'name'.
+    console.error(`Icon: Bibliothèque non spécifiée ou non déductible pour l'icône '${name}'. Utilisez la prop 'lib' ou un nom préfixé (ex: 'FaUser').`);
+    return null;
   }
 
-
-  if (!effectiveLibPrefix && !lib) {
-     // Si aucune bibliothèque n'est déduite ou fournie, utiliser 'fa' par défaut ou afficher une erreur.
-     // Pour cet exemple, on va juste logguer une erreur et ne rien rendre.
-     console.error(`Icon: Bibliothèque non spécifiée ou non déductible pour l'icône '${name}'. Veuillez fournir la prop 'lib' ou utiliser un nom d'icône préfixé (ex: 'FaUser').`);
-     return null;
-  }
-
-
+  // 3. Sélectionner la bibliothèque
   const selectedLibrary = iconLibraries[effectiveLibPrefix];
-
   if (!selectedLibrary) {
     console.error(`Icon: Bibliothèque d'icônes '${effectiveLibPrefix}' non supportée ou non importée dans Icon.jsx.`);
     return null;
   }
 
-  IconComponent = selectedLibrary[name];
+  // 4. Obtenir le composant icône
+  IconComponent = selectedLibrary[iconNameInLibrary];
 
   if (!IconComponent) {
-    // Tentative de recherche sans le préfixe si le préfixe était dans le nom
-    // ex: si name="FaUser" et effectiveLibPrefix="fa", on a déjà le bon IconComponent.
-    // Mais si name="User" et lib="fa", il faut chercher "FaUser"
-    const nameWithoutLibPrefix = name.startsWith(effectiveLibPrefix.charAt(0).toUpperCase() + effectiveLibPrefix.slice(1))
-      ? name
-      : effectiveLibPrefix.charAt(0).toUpperCase() + effectiveLibPrefix.slice(1) + name;
-
-    IconComponent = selectedLibrary[nameWithoutLibPrefix];
-
-    if (!IconComponent) {
-        console.error(`Icon: Icône '${name}' (ou '${nameWithoutLibPrefix}') introuvable dans la bibliothèque '${effectiveLibPrefix}'.`);
+    // Si la première tentative a échoué (ex: 'lib' fournie mais 'name' avait déjà un préfixe),
+    // essayer avec 'name' tel quel si 'lib' n'était pas la source du préfixe.
+    // Ce cas est principalement pour si 'name' est "FaUser" et 'lib="fa"' a été fourni,
+    // iconNameInLibrary serait "FaFaUser" ce qui est faux.
+    // La logique ci-dessus tente déjà de gérer ça, mais comme double sécurité :
+    if (lib && name !== iconNameInLibrary && selectedLibrary[name]) {
+        IconComponent = selectedLibrary[name];
+    } else {
+        console.error(`Icon: Icône '${iconNameInLibrary}' (ou '${name}') introuvable dans la bibliothèque '${effectiveLibPrefix}'. Vérifiez le nom et la casse.`);
         return null;
     }
   }
 
-  const iconStyle = {
-    ...style, // Styles passés en prop
-    fontSize: size,
+
+  // 5. Préparer les styles et props pour le span wrapper
+  const wrapperStyle = {
+    display: 'inline-flex', // Pour un meilleur alignement et pour que le span prenne la taille de l'icône
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: size, // Appliquer size ici pour que l'icône SVG hérite via '1em'
     color: color,
+    ...style,
   };
 
-  // Ajout de `cursor: pointer` si onClick est fourni
   if (onClick) {
-    iconStyle.cursor = 'pointer';
+    wrapperStyle.cursor = 'pointer';
   }
 
+  // 6. Rendre le span avec l'icône
   return (
     <span
       className={`app-icon ${className}`}
-      style={iconStyle}
+      style={wrapperStyle}
       title={title}
       onClick={onClick}
-      role={onClick ? 'button' : undefined} // Sémantique si cliquable
-      tabIndex={onClick ? 0 : undefined}   // Rendre focusable si cliquable
-      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(e); } : undefined}
-      aria-hidden={!title && !onClick} // Si purement décoratif
-      {...otherProps} // Permet de passer des props comme aria-label si nécessaire
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(e); } } : undefined}
+      aria-hidden={!title && !onClick && !otherProps['aria-label'] ? true : undefined} // aria-hidden si purement décoratif
+      {...otherProps} // Permet de passer aria-label, etc.
     >
-      <IconComponent />
+      <IconComponent style={{ width: '1em', height: '1em' }} /> {/* Assurer que l'icône remplit le span */}
     </span>
   );
 };

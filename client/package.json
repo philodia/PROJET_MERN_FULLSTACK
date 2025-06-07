@@ -1,6 +1,6 @@
 {
-  "proxy": "http://localhost:5000",
   "name": "client",
+  "proxy": "http://localhost:5000",
   "version": "0.1.0",
   "author": "Libasse Dia /LibDev_Prod",
   "private": true,
@@ -11,11 +11,15 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.9.0",
+    "bootstrap": "^5.3.6",
     "chart.js": "^4.4.9",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "date-fns": "^4.1.0",
+    "formik": "^2.4.6",
     "lodash.debounce": "^4.0.8",
     "lodash.merge": "^4.6.2",
     "react": "^19.1.0",
+    "react-bootstrap": "^2.10.10",
     "react-chartjs-2": "^5.3.0",
     "react-datepicker": "^8.4.0",
     "react-dom": "^19.1.0",
@@ -26,8 +30,11 @@
     "react-select": "^5.10.1",
     "react-to-print": "^3.1.0",
     "react-toastify": "^11.0.5",
+    "sass": "^1.89.1",
     "socket.io-client": "^4.8.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "webpack-dev-server": "^5.2.2",
+    "yup": "^1.6.1"
   },
   "scripts": {
     "start": "react-scripts start",

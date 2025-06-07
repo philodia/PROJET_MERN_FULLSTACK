@@ -5,20 +5,18 @@ import { NavLink } from 'react-router-dom';
 import { Nav, Collapse } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
 import Icon from '../common/Icon';
-import './Sidebar.scss';
+//import './Sidebar.scss';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { isAuthenticated, hasRole } = useAuth();
   const [openSubmenus, setOpenSubmenus] = useState({});
 
-  const toggleSubmenu = (menuKey) => {
+  const toggleSubmenu = (key) => {
     setOpenSubmenus(prev => ({
       ...prev,
-      [menuKey]: !prev[menuKey],
+      [key]: !prev[key]
     }));
   };
-
-  if (!isAuthenticated) return null;
 
   const menuItems = [
     {
@@ -27,6 +25,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       to: '/dashboard',
       icon: 'BsGrid1X2Fill',
       roles: ['ADMIN', 'MANAGER', 'ACCOUNTANT'],
+      exact: true,
     },
     {
       key: 'commercial',
@@ -34,11 +33,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: 'BsBriefcaseFill',
       roles: ['ADMIN', 'MANAGER'],
       submenu: [
-        { key: 'clients', label: 'Clients', to: '/clients', icon: 'BsPeopleFill' },
-        { key: 'suppliers', label: 'Fournisseurs', to: '/suppliers', icon: 'BsTruck' },
-        { key: 'products', label: 'Produits & Stock', to: '/products', icon: 'BsBoxSeam' },
-        { key: 'quotes', label: 'Devis', to: '/quotes', icon: 'BsFileEarmarkRuledFill' },
-        { key: 'delivery-notes', label: 'Bons de Livraison', to: '/delivery-notes', icon: 'BsFileEarmarkZipFill' },
+        { key: 'clients', label: 'Clients', to: '/clients', icon: 'BsPeopleFill', roles: ['ADMIN', 'MANAGER'] },
+        { key: 'suppliers', label: 'Fournisseurs', to: '/suppliers', icon: 'BsTruck', roles: ['ADMIN', 'MANAGER'] },
+        { key: 'products', label: 'Produits & Stock', to: '/products', icon: 'BsBoxSeam', roles: ['ADMIN', 'MANAGER'] },
+        { key: 'quotes', label: 'Devis', to: '/quotes', icon: 'BsFileEarmarkRuledFill', roles: ['ADMIN', 'MANAGER'] },
+        { key: 'delivery-notes', label: 'Bons de Livraison', to: '/delivery-notes', icon: 'BsFileEarmarkZipFill', roles: ['ADMIN', 'MANAGER'] },
       ],
     },
     {
@@ -54,10 +53,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: 'BsCalculatorFill',
       roles: ['ADMIN', 'ACCOUNTANT'],
       submenu: [
-        { key: 'journal', label: 'Journal', to: '/accounting/journal', icon: 'BsJournalText' },
-        { key: 'ledger', label: 'Grand Livre', to: '/accounting/ledger', icon: 'BsBookHalf' },
-        { key: 'balance-sheet', label: 'Bilan', to: '/accounting/balance-sheet', icon: 'BsBarChartLineFill' },
-        { key: 'chart-of-accounts', label: 'Plan Comptable', to: '/accounting/chart-of-accounts', icon: 'BsDiagram3Fill' },
+        { key: 'journal', label: 'Journal', to: '/accounting/journal', icon: 'BsJournalText', roles: ['ADMIN', 'ACCOUNTANT'] },
+        { key: 'ledger', label: 'Grand Livre', to: '/accounting/ledger', icon: 'BsBookHalf', roles: ['ADMIN', 'ACCOUNTANT'] },
+        { key: 'balance-sheet', label: 'Bilan', to: '/accounting/balance-sheet', icon: 'BsBarChartLineFill', roles: ['ADMIN', 'ACCOUNTANT'] },
+        { key: 'chart-of-accounts', label: 'Plan Comptable', to: '/accounting/chart-of-accounts', icon: 'BsDiagram3Fill', roles: ['ADMIN', 'ACCOUNTANT'] },
       ],
     },
     {
@@ -66,17 +65,32 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: 'BsGearFill',
       roles: ['ADMIN'],
       submenu: [
-        { key: 'user-management', label: 'Gestion Utilisateurs', to: '/admin/user-management', icon: 'BsPersonLinesFill' },
-        { key: 'security-logs', label: 'Journaux Sécurité', to: '/admin/security-logs', icon: 'BsShieldLockFill' },
+        { key: 'user-management', label: 'Utilisateurs', to: '/admin/users', icon: 'BsPersonLinesFill', roles: ['ADMIN'] },
+        { key: 'security-logs', label: 'Journaux Sécurité', to: '/admin/security-logs', icon: 'BsShieldLockFill', roles: ['ADMIN'] },
       ],
+    },
+    {
+      key: 'profile',
+      label: 'Mon Profil',
+      to: '/profile',
+      icon: 'BsPersonCircle',
+      roles: ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'USER'],
     },
   ];
 
   const renderMenuItem = (item, level = 0) => {
-    if (item.roles && !hasRole(item.roles)) return null;
+    const hasAccess = !item.roles || hasRole(item.roles);
+    if (!hasAccess) return null;
 
-    const hasSubmenu = item.submenu?.length > 0;
+    const visibleSubItems = item.submenu?.filter(sub => !sub.roles || hasRole(sub.roles)) || [];
+    const hasSubmenu = visibleSubItems.length > 0;
     const isSubmenuOpen = openSubmenus[item.key] || false;
+
+    const handleLinkClick = () => {
+      if (window.innerWidth < 992 && toggleSidebar) {
+        toggleSidebar();
+      }
+    };
 
     if (hasSubmenu) {
       return (
@@ -84,17 +98,16 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           <Nav.Link
             onClick={() => toggleSubmenu(item.key)}
             aria-expanded={isSubmenuOpen}
-            aria-controls={`submenu-${item.key}`}
-            className={`sidebar-link level-${level} ${isSubmenuOpen ? 'submenu-open' : ''}`}
+            className={`sidebar-link level-${level}`}
           >
             {item.icon && <Icon name={item.icon} className="sidebar-icon" />}
             <span className="sidebar-label">{item.label}</span>
             <Icon name={isSubmenuOpen ? 'BsChevronUp' : 'BsChevronDown'} className="sidebar-submenu-arrow" />
           </Nav.Link>
           <Collapse in={isSubmenuOpen}>
-            <div id={`submenu-${item.key}`} className="sidebar-submenu">
+            <div className="sidebar-submenu ps-3">
               <Nav className="flex-column">
-                {item.submenu.map((subItem) => renderMenuItem(subItem, level + 1))}
+                {visibleSubItems.map(sub => renderMenuItem(sub, level + 1))}
               </Nav>
             </div>
           </Collapse>
@@ -107,9 +120,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         as={NavLink}
         to={item.to}
         key={item.key}
-        className={`sidebar-link level-${level}`}
-        onClick={toggleSidebar}
-        end={level === 0}
+        className={({ isActive }) =>
+          `sidebar-link level-${level} ${isActive ? 'active' : ''}`
+        }
+        onClick={handleLinkClick}
+        end={item.exact}
       >
         {item.icon && <Icon name={item.icon} className="sidebar-icon" />}
         <span className="sidebar-label">{item.label}</span>
@@ -117,12 +132,29 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     );
   };
 
+  if (!isAuthenticated) return null;
+
+  const visibleMenuItems = menuItems.filter(item => {
+    const parentAccess = !item.roles || hasRole(item.roles);
+    const subAccess = item.submenu?.some(sub => !sub.roles || hasRole(sub.roles)) || false;
+    return parentAccess || subAccess;
+  });
+
   return (
-    <div className={`sidebar-wrapper ${isOpen ? 'open' : 'closed'}`}>
-      <Nav className="flex-column sidebar-nav">
-        {menuItems.map(item => renderMenuItem(item))}
+    <aside className={`app-sidebar shadow-sm ${isOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
+        <NavLink to="/dashboard" className="sidebar-brand text-decoration-none">
+          <Icon name="BsBootstrapFill" size="1.5em" className="me-2" />
+          <span className="fw-bold fs-5">GestionApp</span>
+        </NavLink>
+        <button className="btn btn-sm d-lg-none" onClick={toggleSidebar}>
+          <Icon name="BsX" />
+        </button>
+      </div>
+      <Nav className="flex-column sidebar-nav p-2">
+        {visibleMenuItems.map(item => renderMenuItem(item))}
       </Nav>
-    </div>
+    </aside>
   );
 };
 

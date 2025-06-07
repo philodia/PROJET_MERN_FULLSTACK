@@ -1,0 +1,281 @@
+// frontend/src/assets/scss/global.scss
+
+// --- 1. IMPORTATION DE POLICES ---
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+// --- VARIABLES SASS (pour utilisation avec fonctions SASS et pour définir les variables CSS) ---
+// Couleurs de base (vous pouvez les extraire dans un _variables.scss séparé et l'importer)
+$primary-color: #0d6efd;
+$secondary-color: #6c757d;
+$success-color: #198754;
+$danger-color: #dc3545;
+$warning-color: #ffc107;
+$info-color: #0dcaf0;
+$light-color: #f8f9fa;
+$dark-color: #212529;
+
+$body-color-text: $dark-color; // Couleur de texte principale pour le thème clair
+$body-bg-color: #ffffff;      // Fond principal pour le thème clair
+$border-color-default: #dee2e6;
+
+$app-accent-color: #1abc9c;
+$app-sidebar-bg-color: #2c3e50;
+$app-sidebar-text-color: #ecf0f1;
+
+// Typographie
+$font-family-base-stack: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+  'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+  'Segoe UI Symbol';
+$font-family-headings-stack: 'Montserrat', -apple-system, BlinkMacSystemFont,
+  'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+$font-size-root: 16px; // Pour le html, base des rem
+$font-size-base: 1rem;
+$line-height-base: 1.5;
+
+// Espacements
+$spacing-unit-base: 8px;
+
+// Bordures
+$border-radius-base: 0.25rem;
+
+// Ombres
+$shadow-sm-value: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+$shadow-md-value: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+$shadow-lg-value: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+
+
+// --- 2. VARIABLES CSS GLOBALES (:root pour le thème clair par défaut) ---
+:root {
+  // Couleurs Bootstrap (basées sur les variables SASS)
+  --bs-primary: #{$primary-color};
+  --bs-secondary: #{$secondary-color};
+  --bs-success: #{$success-color};
+  --bs-danger: #{$danger-color};
+  --bs-warning: #{$warning-color};
+  --bs-info: #{$info-color};
+  --bs-light: #{$light-color};
+  --bs-dark: #{$dark-color};
+  --bs-body-color: #{$body-color-text};
+  --bs-body-bg: #{$body-bg-color};
+  --bs-border-color: #{$border-color-default};
+  // Pour rgba(var(--bs-primary-rgb), 0.25) dans .form-control:focus
+  --bs-primary-rgb: #{red($primary-color)}, #{green($primary-color)}, #{blue($primary-color)};
+
+
+  // Couleurs personnalisées
+  --app-accent-color: #{$app-accent-color};
+  --app-sidebar-bg: #{$app-sidebar-bg-color};
+  --app-sidebar-text-color: #{$app-sidebar-text-color};
+  --app-sidebar-active-bg: var(--app-accent-color); // Peut rester var() ou utiliser $app-accent-color-sass
+  --app-sidebar-active-text: #ffffff;
+
+  // Typographie
+  --app-font-family-base: #{$font-family-base-stack};
+  --app-font-family-headings: #{$font-family-headings-stack};
+  --app-font-size-base: #{$font-size-base};
+  --app-line-height-base: #{$line-height-base};
+
+  // Espacements
+  --app-spacing-unit: #{$spacing-unit-base};
+  --app-spacing-xs: calc(var(--app-spacing-unit) * 0.5);
+  --app-spacing-sm: var(--app-spacing-unit);
+  --app-spacing-md: calc(var(--app-spacing-unit) * 2);
+  --app-spacing-lg: calc(var(--app-spacing-unit) * 3);
+  --app-spacing-xl: calc(var(--app-spacing-unit) * 4);
+
+  // Bordures
+  --app-border-radius: #{$border-radius-base};
+  --app-border-color: var(--bs-border-color); // Utilise la variable bs-border-color
+
+  // Ombres
+  --app-shadow-sm: #{$shadow-sm-value};
+  --app-shadow-md: #{$shadow-md-value};
+  --app-shadow-lg: #{$shadow-lg-value};
+
+  // Z-index (pourraient être des variables SASS aussi si utilisées dans SASS)
+  --zindex-toast: 1090;
+}
+
+// Thème Sombre (utilisant data-bs-theme="dark" sur <html>)
+[data-bs-theme="dark"] {
+  // Variables SASS pour le thème sombre
+  $dark-theme-primary: lighten($primary-color, 10%); // Exemple: rendre le primaire un peu plus clair sur fond sombre
+  $dark-theme-secondary: lighten($secondary-color, 15%);
+  $dark-theme-body-color: #dee2e6;
+  $dark-theme-body-bg: #212529;
+  $dark-theme-border-color: #495057;
+  $dark-theme-sidebar-bg: $dark-theme-body-bg;
+  $dark-theme-sidebar-text: $dark-theme-body-color;
+
+  // Redéfinition des variables CSS pour le thème sombre
+  --bs-primary: #{$dark-theme-primary};
+  --bs-secondary: #{$dark-theme-secondary};
+  // Garder success, danger, warning, info tels quels ou les ajuster
+  // --bs-success: lighten($success-color, 10%);
+  --bs-light: #343a40; // Un gris plus foncé pour 'light' en thème sombre
+  --bs-dark: #f8f9fa;   // Un gris clair pour 'dark' en thème sombre (pour les textes sur fond sombre)
+  --bs-body-color: #{$dark-theme-body-color};
+  --bs-body-bg: #{$dark-theme-body-bg};
+  --bs-border-color: #{$dark-theme-border-color};
+  --bs-primary-rgb: #{red($dark-theme-primary)}, #{green($dark-theme-primary)}, #{blue($dark-theme-primary)};
+
+
+  --app-sidebar-bg: #{$dark-theme-sidebar-bg};
+  --app-sidebar-text-color: #{$dark-theme-sidebar-text};
+  // ... autres variables d'application à ajuster pour le thème sombre
+}
+
+
+// --- 3. RÉINITIALISATION / NORMALISATION DE BASE ---
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+// --- 4. STYLES POUR HTML ET BODY ---
+html {
+  font-size: $font-size-root; // Utilisation de la variable SASS
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--app-font-family-base);
+  font-size: var(--app-font-size-base);
+  line-height: var(--app-line-height-base);
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+  overflow-x: hidden;
+}
+
+// --- 5. STYLES POUR LES TITRES ET LE TEXTE DE BASE ---
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--app-font-family-headings);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+// ... (tailles h1-h6 inchangées, elles utilisent des valeurs fixes) ...
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+a {
+  color: var(--bs-primary); // Utilise la variable CSS
+  text-decoration: none;
+
+  &:hover {
+    color: darken($primary-color, 10%); // CORRIGÉ: Utilise la variable SASS $primary-color
+    text-decoration: underline;
+  }
+}
+
+// --- 6. CLASSES UTILITAIRES COMMUNES ---
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.text-accent {
+  color: var(--app-accent-color) !important;
+}
+
+.bg-accent {
+  background-color: var(--app-accent-color) !important;
+}
+
+// Espacements (maintenant, ils utilisent directement les variables CSS --app-spacing-*)
+// La boucle @each est toujours valide car elle génère des noms de classe.
+@each $sizeName, $sizeVar in (xs: --app-spacing-xs, sm: --app-spacing-sm, md: --app-spacing-md, lg: --app-spacing-lg, xl: --app-spacing-xl) {
+  // Marges
+  .m-#{$sizeName} { margin: var(#{$sizeVar}) !important; }
+  .mt-#{$sizeName} { margin-top: var(#{$sizeVar}) !important; }
+  .mb-#{$sizeName} { margin-bottom: var(#{$sizeVar}) !important; }
+  .ms-#{$sizeName} { margin-left: var(#{$sizeVar}) !important; }
+  .me-#{$sizeName} { margin-right: var(#{$sizeVar}) !important; }
+  .mx-#{$sizeName} { margin-left: var(#{$sizeVar}) !important; margin-right: var(#{$sizeVar}) !important; }
+  .my-#{$sizeName} { margin-top: var(#{$sizeVar}) !important; margin-bottom: var(#{$sizeVar}) !important; }
+
+  // Paddings
+  .p-#{$sizeName} { padding: var(#{$sizeVar}) !important; }
+  .pt-#{$sizeName} { padding-top: var(#{$sizeVar}) !important; }
+  .pb-#{$sizeName} { padding-bottom: var(#{$sizeVar}) !important; }
+  .ps-#{$sizeName} { padding-left: var(#{$sizeVar}) !important; }
+  .pe-#{$sizeName} { padding-right: var(#{$sizeVar}) !important; }
+  .px-#{$sizeName} { padding-left: var(#{$sizeVar}) !important; padding-right: var(#{$sizeVar}) !important; }
+  .py-#{$sizeName} { padding-top: var(#{$sizeVar}) !important; padding-bottom: var(#{$sizeVar}) !important; }
+}
+
+// --- 7. STYLES POUR DES COMPOSANTS COMMUNS ---
+.form-control,
+.form-select {
+  &:focus {
+    border-color: var(--bs-primary); // Utilise la variable CSS
+    // La variable --bs-primary-rgb est définie dans :root et [data-bs-theme="dark"]
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+  }
+}
+
+.card {
+  border: 1px solid var(--app-border-color); // Utilise la variable CSS
+  box-shadow: var(--app-shadow-sm);         // Utilise la variable CSS
+  border-radius: var(--app-border-radius);  // Utilise la variable CSS
+}
+
+.app-icon {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+// --- 8. IMPORTATION DE SCSS DE COMPOSANTS ---
+// @import 'variables'; // Si vous avez un fichier _variables.scss séparé pour les variables SASS
+// @import 'mixins';
+
+// @import '../components/layout/Sidebar.scss'; // Assurez-vous que Sidebar.scss utilise aussi des variables SASS si besoin de darken/lighten
+// ...autres imports de composants...
+
+// --- Styles de la Scrollbar ---
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  // Utiliser des variables SASS ici si vous voulez qu'elles soient différentes du thème clair/sombre de base
+  // ou des variables CSS si elles sont définies pour le thème sombre.
+  background: $light-color; // Ou var(--bs-light) si vous préférez que ça s'adapte au thème sombre
+  [data-bs-theme="dark"] & { // Cibler spécifiquement le thème sombre pour la scrollbar track
+    background: darken($dark-color, 5%); // Un gris un peu plus foncé que le fond sombre
+  }
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: $secondary-color; // Utilise la variable SASS
+  [data-bs-theme="dark"] & {
+    background: lighten($secondary-color, 20%); // Plus clair sur fond sombre
+  }
+  border-radius: 10px;
+  &:hover {
+    background: darken($secondary-color, 10%);
+    [data-bs-theme="dark"] & {
+      background: lighten($secondary-color, 10%);
+    }
+  }
+}
+
+// Ajustements spécifiques pour React-Toastify
+.Toastify__toast-container {
+  z-index: var(--zindex-toast, 1090) !important;
+}
