@@ -1,13 +1,14 @@
 // frontend/src/features/auth/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
-  loginUser as loginApi,
-  registerUser as registerApi,
-  fetchCurrentUser as fetchCurrentUserApi,
-  // logoutUser as logoutApiCall, // Si vous avez un appel API pour le logout
-} from '../../api/auth.api'; // Ajustez si nécessaire
+  login as loginApiCall,
+  register as registerApiCall,
+  getMe as getMeApiCall,
+  logout as logoutServerApiCall,
+  changeMyPassword as changeMyPasswordApiCall,
+  updateMyProfile as updateMyProfileApiCall,
+} from '../../api/auth.api'; // Assurez-vous que auth.api.js exporte bien ces noms
 
-// Fonction utilitaire pour parser l'utilisateur depuis localStorage
 const getUserFromLocalStorage = () => {
   try {
     const storedUser = localStorage.getItem('authUser');
@@ -19,48 +20,30 @@ const getUserFromLocalStorage = () => {
   }
 };
 
-const token = localStorage.getItem('authToken');
-const user = getUserFromLocalStorage();
+const tokenFromLocalStorage = localStorage.getItem('authToken');
+const userFromLocalStorage = getUserFromLocalStorage();
 
 const initialState = {
-  user: user,
-  token: token,
-  isAuthenticated: !!token && !!user, // True si token ET user (parsé avec succès) sont présents
-  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  user: userFromLocalStorage,
+  token: tokenFromLocalStorage,
+  isAuthenticated: !!tokenFromLocalStorage && !!userFromLocalStorage,
+  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed' | 'action_loading'
   error: null,
 };
 
-const handleAuthSuccess = (state, action) => {
-  state.status = 'succeeded';
-  state.user = action.payload.user;
-  state.token = action.payload.token;
-  state.isAuthenticated = true;
-  state.error = null;
-  // localStorage est géré dans le thunk pour éviter de le faire dans le reducer (effet de bord)
-};
-
-const handleAuthFailure = (state, action, isLoadUser = false) => {
-  state.status = 'failed';
-  state.error = action.payload;
-  state.user = null;
-  state.token = null;
-  state.isAuthenticated = false;
-  // localStorage est nettoyé dans le thunk
-};
-
+// --- Thunks ---
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const data = await loginApi(credentials);
+      const data = await loginApiCall(credentials);
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('authUser', JSON.stringify(data.user));
       return data;
     } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      return rejectWithValue(message || 'Échec de la connexion.');
+      return rejectWithValue(error);
     }
   }
 );
@@ -69,15 +52,16 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const data = await registerApi(userData);
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('authUser', JSON.stringify(data.user));
+      const data = await registerApiCall(userData);
+      if (data.token && data.user) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('authUser', JSON.stringify(data.user));
+      }
       return data;
     } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      return rejectWithValue(message || 'Échec de l\'inscription.');
+      return rejectWithValue(error);
     }
   }
 );
@@ -85,97 +69,145 @@ export const register = createAsyncThunk(
 export const loadUser = createAsyncThunk(
   'auth/loadUser',
   async (_, { getState, rejectWithValue }) => {
-    const currentToken = getState().auth.token; // Ou selectAuthToken(getState())
-    if (!currentToken) {
-      return rejectWithValue('Aucun token, chargement utilisateur annulé.');
+    const token = getState().auth.token;
+    if (!token) {
+      return rejectWithValue({ message: 'Aucun token, chargement utilisateur annulé.' });
     }
     try {
-      const fetchedUser = await fetchCurrentUserApi();
+      const fetchedUser = await getMeApiCall();
       localStorage.setItem('authUser', JSON.stringify(fetchedUser));
-      return fetchedUser; // Retourne seulement l'utilisateur, le token est déjà dans l'état
+      return { user: fetchedUser, token };
     } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      return rejectWithValue(message || 'Session invalide ou expirée.');
+      return rejectWithValue(error);
     }
   }
 );
 
-// Si vous avez un logout API :
-// export const logoutUserApi = createAsyncThunk('auth/logoutUserApi', async (_, { dispatch }) => {
-//   try {
-//     await logoutApiCall();
-//   } catch (e) { console.error("Logout API call failed but proceeding with client logout", e); }
-//   // Dans tous les cas, on déconnecte côté client
-//   dispatch(performLogout()); // Action synchrone pour nettoyer l'état
-// });
+export const performLogout = createAsyncThunk(
+  'auth/performLogout',
+  async (_, { dispatch }) => {
+    try {
+      await logoutServerApiCall();
+    } catch (apiError) {
+      console.warn("L'appel API de déconnexion serveur a échoué, mais la déconnexion client se poursuit.", apiError.message || apiError);
+    }
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
+    dispatch(authSlice.actions.clearAuthDataLocally()); // Dispatcher l'action synchrone
+    return { success: true };
+  }
+);
 
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateUserProfile',
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const updatedUser = await updateMyProfileApiCall(profileData);
+      localStorage.setItem('authUser', JSON.stringify(updatedUser));
+      return updatedUser;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
 
+export const changeUserPassword = createAsyncThunk(
+  'auth/changeUserPassword',
+  async (passwordData, { rejectWithValue }) => {
+    try {
+      const response = await changeMyPasswordApiCall(passwordData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
+// --- Helpers pour Reducers ---
+const handleAuthSuccess = (state, action) => {
+  state.status = 'succeeded';
+  state.user = action.payload.user;
+  state.token = action.payload.token;
+  state.isAuthenticated = true;
+  state.error = null;
+};
+
+const handleAuthFailure = (state, action) => {
+  state.status = 'failed';
+  state.error = action.payload;
+  state.user = null;
+  state.token = null;
+  state.isAuthenticated = false;
+};
+
+// --- Slice Definition ---
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // Renommé pour clarté si logoutUserApi existe
-    performLogout(state) {
+    // Action renommée pour plus de clarté sur son rôle interne
+    clearAuthDataLocally(state) {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.status = 'idle';
       state.error = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('authUser');
     },
-    clearError(state) {
+    clearAuthError(state) {
       state.error = null;
-      if (state.status === 'failed') {
-        state.status = 'idle';
-      }
-    },
-    updateUser(state, action) {
-      if (state.user && action.payload) { // S'assurer que user et payload existent
-        state.user = { ...state.user, ...action.payload };
-        localStorage.setItem('authUser', JSON.stringify(state.user));
-      }
+      if (state.status === 'failed' && state.isAuthenticated) state.status = 'succeeded';
+      else if (state.status === 'failed' && !state.isAuthenticated) state.status = 'idle';
     },
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(login.pending, (state) => { state.status = 'loading'; state.error = null; })
       .addCase(login.fulfilled, handleAuthSuccess)
       .addCase(login.rejected, handleAuthFailure)
-      // Register
       .addCase(register.pending, (state) => { state.status = 'loading'; state.error = null; })
-      .addCase(register.fulfilled, handleAuthSuccess)
+      .addCase(register.fulfilled, (state, action) => {
+        if (action.payload.token && action.payload.user) {
+          handleAuthSuccess(state, action);
+        } else {
+          state.status = 'succeeded';
+        }
+      })
       .addCase(register.rejected, handleAuthFailure)
-      // Load User
       .addCase(loadUser.pending, (state) => { state.status = 'loading'; state.error = null; })
-      .addCase(loadUser.fulfilled, (state, action) => { // Action.payload est `fetchedUser`
+      .addCase(loadUser.fulfilled, handleAuthSuccess)
+      .addCase(loadUser.rejected, handleAuthFailure)
+      .addCase(performLogout.pending, (state) => { state.status = 'loading'; })
+      .addCase(performLogout.fulfilled, (state) => { state.status = 'idle';}) // L'état est déjà nettoyé
+      .addCase(performLogout.rejected, (state) => { state.status = 'idle'; console.warn("Thunk performLogout rejeté."); })
+      .addCase(updateUserProfile.pending, (state) => { state.status = 'action_loading'; state.error = null; })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.user = action.payload;
-        state.isAuthenticated = true; // Le token était valide
         state.error = null;
       })
-      .addCase(loadUser.rejected, (state, action) => handleAuthFailure(state, action, true));
-      // Si logoutUserApi est utilisé :
-      // .addCase(logoutUserApi.pending, (state) => { state.status = 'loading'; })
-      // .addCase(logoutUserApi.fulfilled, (state) => { /* état déjà nettoyé par performLogout */ })
-      // .addCase(logoutUserApi.rejected, (state) => { /* état déjà nettoyé par performLogout */ });
+      .addCase(updateUserProfile.rejected, (state, action) => { state.status = 'failed'; state.error = action.payload; })
+      .addCase(changeUserPassword.pending, (state) => { state.status = 'action_loading'; state.error = null; })
+      .addCase(changeUserPassword.fulfilled, (state) => {
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(changeUserPassword.rejected, (state, action) => { state.status = 'failed'; state.error = action.payload; });
   },
 });
 
-// Renommer l'action exportée pour éviter confusion si logoutUserApi existe
-export const { performLogout: logout, clearError, updateUser } = authSlice.actions;
-// Si pas de logout API, garder : export const { logout, clearError, updateUser } = authSlice.actions;
+// Exporter l'action de nettoyage interne sous un nom clair pour l'intercepteur
+export const { clearAuthDataLocally: logoutClientSideInternal, clearAuthError } = authSlice.actions;
 
 // Sélecteurs
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
+// ... autres sélecteurs ...
 export const selectAuthToken = (state) => state.auth.token;
 export const selectAuthStatus = (state) => state.auth.status;
 export const selectAuthError = (state) => state.auth.error;
-// Sélecteur booléen pour isLoading, dérivé de status
-export const selectAuthIsLoading = (state) => state.auth.status === 'loading';
+export const selectAuthIsLoading = (state) => state.auth.status === 'loading' || state.auth.status === 'action_loading';
+
 
 export default authSlice.reducer;

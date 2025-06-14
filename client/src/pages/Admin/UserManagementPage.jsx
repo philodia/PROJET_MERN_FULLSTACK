@@ -1,31 +1,36 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  fetchUsersAdmin, // Supposons que ce thunk gère la pagination, le tri, les filtres
+  fetchUsersAdmin,
   deleteUserAdmin,
-  // createUserAdmin, updateUserAdmin, // Ces thunks seront appelés depuis UserForm
   selectAllUsersAdmin,
   selectUserAdminStatus,
   selectUserAdminError,
   selectUserAdminPagination,
   clearUserAdminError,
-} from '../../features/users/userSlice'; // Ajustez le chemin
+} from '../../features/users/userSlice';
+import { selectCurrentUser } from '../../features/auth/authSlice'; // Import ajouté
 
 import DataTable from '../../components/common/DataTable/DataTable';
 import TableActions from '../../components/common/DataTable/TableActions';
 import TablePagination from '../../components/common/DataTable/TablePagination';
 import AppModal from '../../components/common/AppModal';
-import UserForm from '../../components/users/UserForm'; // À créer
+import UserForm from '../../components/users/UserForm';
 import AppButton from '../../components/common/AppButton';
 import AlertMessage from '../../components/common/AlertMessage';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import PageHeader from '../../components/common/PageHeader';
-import SearchBar from '../../components/common/SearchBar';
-import StatusBadge from '../../components/common/StatusBadge'; // Pour afficher le statut Actif/Inactif
-import Icon from '../../components/common/Icon'; // Pour les icônes dans les boutons
+//import PageHeader from '../../components/common/PageHeader';
+import PageContainer from '../../components/layout/PageContainer';
+//import SearchBar from '../../components/common/SearchBar'; // Import décommenté
+import TableFilters from '../../components/common/DataTable/TableFilters';
+import StatusBadge from '../../components/common/StatusBadge';
+import Icon from '../../components/common/Icon';
+//import { Form as BootstrapForm, Row, Col } from 'react-bootstrap';
 
 import { showSuccessToast, showErrorToast } from '../../components/common/NotificationToast';
-import ConfirmationModal from '../../components/common/ConfirmationModal'; // Composant pour confirmation
+import ConfirmationModal from '../../components/common/ConfirmationModal';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const UserManagementPage = () => {
   const dispatch = useDispatch();
@@ -33,26 +38,31 @@ const UserManagementPage = () => {
   const status = useSelector(selectUserAdminStatus);
   const error = useSelector(selectUserAdminError);
   const pagination = useSelector(selectUserAdminPagination);
+  const currentUser = useSelector(selectCurrentUser); // Utilisateur connecté
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null); // null pour création, objet user pour édition
-
+  const [editingUser, setEditingUser] = useState(null);
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Paramètres pour la récupération des données (pagination, filtres, tri)
+  // Initialisation simplifiée des queryParams
   const [queryParams, setQueryParams] = useState({
     page: 1,
     limit: 10,
-    sort: '-createdAt', // Trier par date de création décroissante par défaut
+    sort: '-createdAt',
     search: '',
-    role: '', // Filtre par rôle
-    isActive: '', // Filtre par statut (true, false, ou '' pour tous)
+    role: '',
+    isActive: '',
   });
 
   const fetchData = useCallback(() => {
-    dispatch(fetchUsersAdmin(queryParams));
+    const activeFilters = Object.fromEntries(
+      Object.entries(queryParams).filter(([, value]) => 
+        value !== '' && value !== null && value !== undefined
+      )
+    );
+    dispatch(fetchUsersAdmin(activeFilters));
   }, [dispatch, queryParams]);
 
   useEffect(() => {
@@ -60,12 +70,33 @@ const UserManagementPage = () => {
   }, [fetchData]);
 
   useEffect(() => {
-    // Effacer l'erreur si le statut redevient idle (par exemple après une action réussie)
-    if (status === 'idle' && error) {
-      dispatch(clearUserAdminError());
-    }
-  }, [status, error, dispatch]);
+    return () => {
+      if (error) dispatch(clearUserAdminError());
+    };
+  }, [dispatch, error]);
 
+  // Gestion du tri
+  const handleSort = useCallback((sortBy) => {
+    if (sortBy.length > 0) {
+      const { id, desc } = sortBy[0];
+      const sortOrder = desc ? '-' : '';
+      setQueryParams(prev => ({ 
+        ...prev, 
+        sort: `${sortOrder}${id}`,
+        page: 1 // Reset à la première page
+      }));
+    } else {
+      setQueryParams(prev => ({ ...prev, sort: '-createdAt' }));
+    }
+  }, []);
+
+  // Conversion des paramètres de tri pour DataTable
+  const sortBy = useMemo(() => {
+    if (!queryParams.sort) return [];
+    const isDesc = queryParams.sort.startsWith('-');
+    const id = isDesc ? queryParams.sort.slice(1) : queryParams.sort;
+    return [{ id, desc: isDesc }];
+  }, [queryParams.sort]);
 
   const handleOpenCreateModal = () => {
     setEditingUser(null);
@@ -80,16 +111,13 @@ const UserManagementPage = () => {
   const handleCloseUserModal = () => {
     setIsUserModalOpen(false);
     setEditingUser(null);
-    // Optionnel: rafraîchir les données si une création/modification a eu lieu
-    // fetchData(); // Ou le UserForm peut gérer cela via un callback onSuccess
   };
 
-  const handleUserFormSuccess = () => {
+  const handleUserFormSuccess = (actionType) => {
     handleCloseUserModal();
-    fetchData(); // Rafraîchir la liste après succès
-    showSuccessToast(`Utilisateur ${editingUser ? 'mis à jour' : 'créé'} avec succès !`);
+    fetchData();
+    showSuccessToast(`Utilisateur ${actionType === 'updated' ? 'mis à jour' : 'créé'} avec succès !`);
   };
-
 
   const openDeleteConfirmation = (user) => {
     setUserToDelete(user);
@@ -105,11 +133,17 @@ const UserManagementPage = () => {
     if (!userToDelete) return;
     setIsDeleting(true);
     try {
-      await dispatch(deleteUserAdmin(userToDelete._id)).unwrap(); // unwrap pour attraper l'erreur ici si rethrow depuis le thunk
+      await dispatch(deleteUserAdmin(userToDelete._id)).unwrap();
       showSuccessToast('Utilisateur supprimé avec succès !');
-      fetchData(); // Rafraîchir la liste
-    } catch (deleteError) {
-      showErrorToast(deleteError.message || 'Erreur lors de la suppression de l\'utilisateur.');
+      
+      // Gestion de la pagination après suppression
+      if (users.length === 1 && queryParams.page > 1) {
+        setQueryParams(prev => ({ ...prev, page: prev.page - 1 }));
+      } else {
+        fetchData();
+      }
+    } catch (deleteErr) {
+      showErrorToast(deleteErr.message || 'Erreur lors de la suppression.');
     } finally {
       setIsDeleting(false);
       closeDeleteConfirmation();
@@ -120,124 +154,203 @@ const UserManagementPage = () => {
     setQueryParams(prev => ({ ...prev, page: newPage }));
   };
 
-  const handleSearch = (searchTerm) => {
-    setQueryParams(prev => ({ ...prev, search: searchTerm, page: 1 }));
+  const handleApplyFilters = (appliedFilters) => {
+    setQueryParams(prev => ({
+      ...prev,
+      ...appliedFilters,
+      page: 1, // Reset à la première page
+    }));
   };
 
-  // Définition des colonnes pour DataTable
+  const handleResetFilters = () => {
+    setQueryParams({
+      page: 1,
+      limit: 10,
+      sort: '-createdAt',
+      search: '',
+      role: '',
+      isActive: '',
+    });
+  };
+
+  const filterConfigs = useMemo(() => [
+    { 
+      id: 'search', 
+      label: 'Recherche globale', 
+      type: 'text', 
+      placeholder: 'Nom, email...', 
+      colSize: 12 
+    },
+    {
+      id: 'role', 
+      label: 'Rôle', 
+      type: 'select',
+      options: [
+        { value: '', label: 'Tous les rôles' },
+        { value: 'ADMIN', label: 'Admin' },
+        { value: 'MANAGER', label: 'Manager' },
+        { value: 'ACCOUNTANT', label: 'Comptable' },
+        { value: 'USER', label: 'Utilisateur' },
+      ],
+      colSize: 6, 
+      md: 3
+    },
+    {
+      id: 'isActive', 
+      label: 'Statut', 
+      type: 'select',
+      options: [
+        { value: '', label: 'Tous les statuts' },
+        { value: 'true', label: 'Actif' },
+        { value: 'false', label: 'Inactif' },
+      ],
+      colSize: 6, 
+      md: 3
+    },
+  ], []);
+
   const columns = useMemo(() => [
     { Header: 'Nom d\'utilisateur', accessor: 'username', sortable: true },
     { Header: 'Email', accessor: 'email', sortable: true },
-    { Header: 'Prénom', accessor: 'firstName', defaultCanSort: false, Cell: ({ value }) => value || '-' },
-    { Header: 'Nom', accessor: 'lastName', defaultCanSort: false, Cell: ({ value }) => value || '-' },
-    { Header: 'Rôle', accessor: 'role', sortable: true, Cell: ({ value }) => <StatusBadge variant={value.toLowerCase()} pillSize="sm">{value}</StatusBadge> },
+    { 
+      Header: 'Nom Complet', 
+      accessor: 'fullName', 
+      Cell: ({ value }) => value || '-' 
+    },
+    { 
+      Header: 'Rôle', 
+      accessor: 'role', 
+      sortable: true, 
+      Cell: ({ value }) => value ? 
+        <StatusBadge variant={value.toLowerCase()} pillSize="sm">
+          {value}
+        </StatusBadge> : '-' 
+    },
     {
-      Header: 'Statut',
-      accessor: 'isActive',
+      Header: 'Statut', 
+      accessor: 'isActive', 
       sortable: true,
       Cell: ({ value }) => (
-        <StatusBadge variant={value ? 'active' : 'inactive'} pillSize="sm">
+        <StatusBadge variant={value ? 'success' : 'danger'} pillSize="sm">
           {value ? 'Actif' : 'Inactif'}
         </StatusBadge>
       ),
+      textAlign: 'center', 
       width: 100,
-      textAlign: 'center',
     },
     {
-      Header: 'Dernière Connexion',
-      accessor: 'lastLogin',
+      Header: 'Créé le', 
+      accessor: 'createdAt', 
       sortable: true,
-      Cell: ({ value }) => (value ? new Date(value).toLocaleDateString('fr-FR') : '-'),
+      Cell: ({ value }) => value ? 
+        format(new Date(value), 'P', { locale: fr }) : '-',
     },
     {
-      Header: 'Créé le',
-      accessor: 'createdAt',
-      sortable: true,
-      Cell: ({ value }) => new Date(value).toLocaleDateString('fr-FR'),
+      Header: 'Actions', 
+      id: 'actions', 
+      disableSortBy: true, 
+      textAlign: 'right', 
+      width: 100,
+      Cell: ({ row }) => (
+        <TableActions 
+          item={row.original} 
+          actionsConfig={[
+            { 
+              id: 'edit', 
+              iconName: 'FaPencilAlt', 
+              label: 'Modifier', 
+              onClick: () => handleOpenEditModal(row.original) 
+            },
+            { 
+              id: 'delete', 
+              iconName: 'FaTrash', 
+              label: 'Supprimer', 
+              variant: 'danger', 
+              onClick: () => openDeleteConfirmation(row.original), 
+              disabled: row.original._id === currentUser?._id
+            },
+          ]}
+        />
+      ),
     },
-    {
-      Header: 'Actions',
-      id: 'actions',
-      Cell: ({ row }) => { // row.original contient l'objet utilisateur complet
-        const user = row.original;
-        return (
-          <TableActions
-            item={user}
-            actionsConfig={[
-              { id: 'edit', iconName: 'FaPencilAlt', label: 'Modifier', onClick: () => handleOpenEditModal(user) },
-              { id: 'delete', iconName: 'FaTrash', label: 'Supprimer', variant: 'danger', onClick: () => openDeleteConfirmation(user) },
-              // Vous pourriez ajouter une action 'view' si nécessaire
-            ]}
-          />
-        );
-      },
-      disableSortBy: true, // Désactiver le tri sur la colonne d'actions
-      width: 120,
-      textAlign: 'right',
-    },
-  ], []); // Les dépendances vides indiquent que `columns` ne changera pas à moins que la page ne soit remontée.
+  ], [currentUser]);
 
-  if (status === 'loading' && !users.length) { // Afficher le spinner seulement au chargement initial
-    return <LoadingSpinner fullPage />;
+  const isLoading = status === 'loading';
+  const isLoadingInitial = isLoading && users.length === 0;
+
+  if (isLoadingInitial) {
+    return (
+      <PageContainer title="Gestion des Utilisateurs">
+        <LoadingSpinner fullPage />
+      </PageContainer>
+    );
   }
 
   return (
-    <div className="container-fluid mt-4 user-management-page">
-      <PageHeader
-        title="Gestion des Utilisateurs"
-        actionButton={
-          <AppButton onClick={handleOpenCreateModal} variant="primary">
-            <Icon name="FaPlus" style={{ marginRight: '8px' }} />
-            Nouvel Utilisateur
-          </AppButton>
-        }
-      />
-
+    <PageContainer
+      title="Gestion des Utilisateurs"
+      actionButton={
+        <AppButton onClick={handleOpenCreateModal} variant="primary" icon={<Icon name="FaPlus" />}>
+          Nouvel Utilisateur
+        </AppButton>
+      }
+      breadcrumbs={[
+        { label: 'Administration', path: '/admin/dashboard-stats' },
+        { label: 'Utilisateurs', isActive: true },
+      ]}
+    >
       {error && (
-        <AlertMessage variant="danger" onClose={() => dispatch(clearUserAdminError())} dismissible>
-          Erreur : {typeof error === 'string' ? error : JSON.stringify(error)}
+        <AlertMessage 
+          variant="danger" 
+          onClose={() => dispatch(clearUserAdminError())} 
+          dismissible
+        >
+          {error.message || 'Erreur lors du chargement des utilisateurs'}
         </AlertMessage>
       )}
 
-      <div className="mb-3">
-        <SearchBar onSearch={handleSearch} placeholder="Rechercher par nom d'utilisateur, email..." initialValue={queryParams.search}/>
-        {/* TODO: Ajouter des filtres plus avancés pour Rôle et Statut si nécessaire, en utilisant TableFilters */}
-      </div>
+      <TableFilters
+        filterConfigs={filterConfigs}
+        initialFilterValues={{
+          search: queryParams.search,
+          role: queryParams.role,
+          isActive: queryParams.isActive
+        }}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
+        isApplying={isLoading}
+        className="mb-3"
+      />
 
-      {/*
-        Ici, vous passeriez `users` à votre composant DataTable.
-        Le DataTable devrait gérer l'affichage des colonnes,
-        le tri (en appelant une fonction qui met à jour queryParams.sort), etc.
-      */}
-      {status === 'loading' && <p>Chargement des utilisateurs...</p> /* Indicateur de re-chargement */}
       <DataTable
         columns={columns}
         data={users}
-        isLoading={status === 'loading'} // Pour afficher un indicateur de chargement sur la table
-        // Props pour le tri côté serveur (si DataTable le gère) :
-        // onSort={(sortBy) => {
-        //   const sortString = sortBy.map(s => `${s.desc ? '-' : ''}${s.id}`).join(',');
-        //   setQueryParams(prev => ({ ...prev, sort: sortString, page: 1 }));
-        // }}
-        // initialSortBy={[{ id: 'createdAt', desc: true }]} // (ou dérivé de queryParams.sort)
-        // manualSortBy={true} // Indique que le tri est géré côté serveur
-        // manualPagination={true} // Indique que la pagination est gérée côté serveur
+        isLoading={isLoading}
+        onSort={handleSort}
+        sortBy={sortBy}
+        manualSortBy
       />
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.totalPages > 0 && (
         <TablePagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
           onPageChange={handlePageChange}
+          className="mt-3"
         />
+      )}
+
+      {!isLoading && users.length === 0 && (
+        <AlertMessage variant="info" className="mt-3">
+          Aucun utilisateur ne correspond à vos critères
+        </AlertMessage>
       )}
 
       <AppModal
         show={isUserModalOpen}
         onHide={handleCloseUserModal}
-        title={editingUser ? `Modifier l'utilisateur : ${editingUser.username}` : 'Créer un Nouvel Utilisateur'}
-        size="lg" // Ou 'md'
-        // hideFooter // Le footer sera géré par UserForm (boutons Soumettre/Annuler)
+        title={editingUser ? `Modifier : ${editingUser.username}` : 'Créer un Utilisateur'}
+        size="lg"
       >
         <UserForm
           initialUser={editingUser}
@@ -251,12 +364,12 @@ const UserManagementPage = () => {
         onHide={closeDeleteConfirmation}
         onConfirm={handleDeleteUser}
         title="Confirmer la Suppression"
-        body={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${userToDelete?.username}" ? Cette action est irréversible.`}
+        body={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${userToDelete?.username}" ?`}
         confirmButtonText="Supprimer"
         confirmButtonVariant="danger"
         isConfirming={isDeleting}
       />
-    </div>
+    </PageContainer>
   );
 };
 

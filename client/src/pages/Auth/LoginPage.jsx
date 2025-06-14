@@ -2,16 +2,21 @@
 import React, { useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { Alert, Form as BootstrapForm } from 'react-bootstrap'; // Bootstrap Form pour les groupes
+import { Alert, Form as BootstrapForm } from 'react-bootstrap';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import AuthLayout from '../../components/layout/AuthLayout';
-import AppButton from '../../components/common/AppButton'; // Votre composant bouton
-// import AlertMessage from '../../components/common/AlertMessage'; // On peut utiliser Alert de Bootstrap directement
+import AppButton from '../../components/common/AppButton';
+import Icon from '../../components/common/Icon'; // Pour une icône sur le bouton par exemple
 
-// Importer les actions et sélecteurs de Redux
-import { login, clearError, selectAuthIsLoading, selectAuthError, selectIsAuthenticated } from '../../features/auth/authSlice';
+import {
+  login,
+  clearAuthError, // Renommé depuis clearError pour plus de spécificité
+  selectAuthIsLoading,
+  selectAuthError,
+  selectIsAuthenticated,
+} from '../../features/auth/authSlice';
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -19,21 +24,28 @@ const LoginPage = () => {
   const location = useLocation();
 
   const isLoading = useSelector(selectAuthIsLoading);
-  const authError = useSelector(selectAuthError);
+  const authErrorObject = useSelector(selectAuthError); // Renommé pour clarté que c'est un objet
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  // Rediriger si déjà authentifié
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/dashboard';
+      const from = location.state?.from?.pathname || '/dashboard'; // Rediriger vers la page de destination ou dashboard
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, location.state]);
 
-  // Effacer les erreurs précédentes lors du montage du composant
   useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
+    // Effacer les erreurs d'authentification précédentes lors du montage de la page
+    // pour ne pas afficher une ancienne erreur si l'utilisateur navigue vers la page de login.
+    if (authErrorObject) {
+        dispatch(clearAuthError());
+    }
+    // Retourner une fonction de nettoyage est une bonne pratique si l'effet a des "effets de bord"
+    // qui doivent être nettoyés, mais ici, ce n'est pas strictement nécessaire pour un simple dispatch.
+    // return () => {
+    //   dispatch(clearAuthError()); // Ou effacer uniquement si on quitte la page avant une tentative de login
+    // };
+  }, [dispatch, authErrorObject]); // Exécuter si authErrorObject change (pour le cas où il est initialement là)
 
   const initialValues = {
     email: '',
@@ -47,45 +59,38 @@ const LoginPage = () => {
     password: Yup.string().required('Le mot de passe est requis.'),
   });
 
-  const handleSubmit = async (values, { setSubmitting }) => {
-    // Effacer les erreurs précédentes au cas où l'utilisateur resoumet après une erreur
-    if (authError) {
-        dispatch(clearError());
+  const handleSubmit = async (values /*, { setSubmitting } // Pas besoin de setSubmitting ici */) => {
+    // S'il y a une erreur affichée, l'effacer avant la nouvelle tentative
+    if (authErrorObject) {
+      dispatch(clearAuthError());
     }
 
     try {
-      // `login` est un createAsyncThunk, il retourne une promesse
-      // `.unwrap()` est une fonction utilitaire de RTK pour obtenir le payload en cas de succès
-      // ou lancer l'erreur (payload de rejectWithValue) en cas d'échec.
       await dispatch(login(values)).unwrap();
-      // La redirection est gérée par le useEffect ci-dessus basé sur isAuthenticated
-      // Si vous ne voulez pas attendre le useEffect, vous pouvez naviguer ici aussi :
-      // const from = location.state?.from?.pathname || "/dashboard";
-      // navigate(from, { replace: true });
-    } catch (rejectedValueOrSerializedError) {
-      // L'erreur est déjà dans l'état Redux (authError) grâce à `rejectWithValue` dans le thunk
-      // et sera affichée par le sélecteur.
-      // Pas besoin de `setSubmitError` local si `authError` est utilisé pour l'affichage.
-      console.error('Échec de la connexion:', rejectedValueOrSerializedError);
+      // La redirection est gérée par le useEffect ci-dessus basé sur isAuthenticated.
+      // Si le login est réussi, isAuthenticated deviendra true, et l'effet se déclenchera.
+    } catch (rejectedValue) {
+      // L'erreur est déjà dans l'état Redux via authErrorObject.
+      // Le rejectedValue ici est ce que rejectWithValue a retourné (ex: { message: '...' })
+      console.error('Échec de la connexion (capturé dans le composant):', rejectedValue);
+      // Pas besoin de setState local pour l'erreur, elle est déjà dans Redux.
     }
-    // setSubmitting est automatiquement géré par Formik pour les soumissions asynchrones
-    // et l'état `isLoading` de Redux contrôle le bouton.
-    // `setSubmitting(false)` n'est généralement pas nécessaire ici si le thunk gère bien son cycle.
+    // Formik gère automatiquement isSubmitting à false après que la promesse de onSubmit soit résolue/rejetée.
   };
 
   return (
-    <AuthLayout pageTitle="Accéder à votre compte">
+    <AuthLayout pageTitle="Connexion à Votre Compte">
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {/* `isSubmitting` de Formik est utile, mais on utilise `isLoading` de Redux pour le bouton */}
-        {({ errors, touched /*, isSubmitting: formikIsSubmitting */ }) => (
+        {({ errors, touched }) => (
           <Form noValidate>
-            {authError && (
-              <Alert variant="danger" onClose={() => dispatch(clearError())} dismissible>
-                {typeof authError === 'object' ? JSON.stringify(authError) : authError}
+            {authErrorObject && (
+              <Alert variant="danger" onClose={() => dispatch(clearAuthError())} dismissible>
+                {authErrorObject.message || // Afficher le message de l'objet erreur
+                 (typeof authErrorObject === 'string' ? authErrorObject : 'Identifiants incorrects ou erreur serveur.')}
               </Alert>
             )}
 
@@ -97,11 +102,12 @@ const LoginPage = () => {
                 as={BootstrapForm.Control}
                 isInvalid={!!errors.email && touched.email}
                 placeholder="votreadresse@example.com"
+                disabled={isLoading} // Désactiver pendant le chargement
               />
-              <ErrorMessage name="email" component="div" className="invalid-feedback" />
+              <ErrorMessage name="email" component={BootstrapForm.Control.Feedback} type="invalid" />
             </BootstrapForm.Group>
 
-            <BootstrapForm.Group className="mb-3" controlId="loginPassword">
+            <BootstrapForm.Group className="mb-4" controlId="loginPassword"> {/* Augmenté mb */}
               <BootstrapForm.Label>Mot de Passe</BootstrapForm.Label>
               <Field
                 name="password"
@@ -109,28 +115,30 @@ const LoginPage = () => {
                 as={BootstrapForm.Control}
                 isInvalid={!!errors.password && touched.password}
                 placeholder="Votre mot de passe"
+                disabled={isLoading} // Désactiver pendant le chargement
               />
-              <ErrorMessage name="password" component="div" className="invalid-feedback" />
+              <ErrorMessage name="password" component={BootstrapForm.Control.Feedback} type="invalid" />
             </BootstrapForm.Group>
 
             <div className="d-grid mb-3">
-              <AppButton type="submit" variant="primary" isLoading={isLoading} disabled={isLoading}>
-                {isLoading ? 'Connexion en cours...' : 'Se connecter'}
+              <AppButton type="submit" variant="primary" size="lg" isLoading={isLoading} disabled={isLoading}>
+                <Icon name="FaSignInAlt" className="me-2" />
+                {isLoading ? 'Connexion...' : 'Se Connecter'}
               </AppButton>
             </div>
 
-            <div className="text-center mb-3">
-              <Link to="/forgot-password">Mot de passe oublié ?</Link>
+            <div className="text-center">
+              <Link to="/auth/forgot-password">Mot de passe oublié ?</Link>
             </div>
 
-            <hr />
-
-            {/*<div className="text-center">
-              <p className="mb-1">Vous n'avez pas de compte ?</p>
-              <Link to="/register" className="fw-bold">
-                Créez-en un ici
-              </Link>
-            </div>*/}
+            {/* Si l'inscription publique est activée */}
+            {/* <hr className="my-4" />
+            <div className="text-center">
+              <p className="text-muted">Nouvel utilisateur ?</p>
+              <AppButton as={Link} to="/auth/register" variant="outline-secondary" className="w-100">
+                Créer un compte
+              </AppButton>
+            </div> */}
           </Form>
         )}
       </Formik>

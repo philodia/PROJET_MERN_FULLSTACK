@@ -1,140 +1,144 @@
 // gestion-commerciale-app/backend/controllers/admin.controller.js
-
 const User = require('../models/User.model');
 const Invoice = require('../models/Invoice.model');
 const Product = require('../models/Product.model');
 const Quote = require('../models/Quote.model');
-// const DeliveryNote = require('../models/DeliveryNote.model'); // Décommentez si utilisé
 const SecurityLog = require('../models/SecurityLog.model');
-// const { AppError } = require('../middleware/error.middleware'); // Non utilisé directement ici
-const asyncHandler = require('../middleware/asyncHandler.middleware'); // Assurez-vous que c'est bien un middleware et pas juste une fonction
+const asyncHandler = require('../middleware/asyncHandler.middleware');
 const APIFeatures = require('../utils/apiFeatures');
+const { getMonthDateRange, getPastMonthsDateRanges } = require('../utils/date.utils'); // Supposant que vous créez ce fichier
+
+// Constantes pour les statuts (exemple, à définir dans un fichier constants.js)
+const INVOICE_STATUS = {
+  PAID: 'PAID',
+  UNPAID: 'UNPAID', // Remplacer par SENT si c'est plus approprié pour "en attente"
+  OVERDUE: 'OVERDUE',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  SENT: 'SENT', // Ajouté pour plus de clarté
+  // ... autres statuts
+};
+
+const PRODUCT_STOCK_STATUS = { // Pas directement utilisé ici mais pour la sémantique
+    CRITICAL: 'CRITICAL',
+};
 
 // @desc    Récupérer les statistiques clés et données pour le tableau de bord administrateur
-// @route   GET /api/admin/dashboard/stats  (Note: la route dans admin.routes.js est /dashboard/stats)
+// @route   GET /api/admin/dashboard-stats
 // @access  Private/Admin
 exports.getAdminDashboardStats = asyncHandler(async (req, res, next) => {
-  console.log('Contrôleur getAdminDashboardStats atteint !'); // Pour le debug
+  console.log('Contrôleur getAdminDashboardStats atteint !');
 
   const now = new Date();
-  const startOfMonthCurrent = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonthCurrent = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const currentMonthDateRange = getMonthDateRange(now.getFullYear(), now.getMonth());
 
   // --- Statistiques pour les StatCards ---
   const totalUsersPromise = User.countDocuments();
-  const pendingInvoicesCountPromise = Invoice.countDocuments({ status: { $in: ['UNPAID', 'OVERDUE', 'PARTIALLY_PAID'] } });
+  const pendingInvoicesCountPromise = Invoice.countDocuments({
+    status: { $in: [INVOICE_STATUS.SENT, INVOICE_STATUS.OVERDUE, INVOICE_STATUS.PARTIALLY_PAID] }
+  });
 
   const monthlyRevenuePromise = Invoice.aggregate([
     {
       $match: {
-        status: 'PAID',
-        // Idéalement, filtrer sur une `paymentDate` si elle existe.
-        // Sinon, updatedAt peut être utilisé si la facture passe à PAID à ce moment-là.
-        updatedAt: { $gte: startOfMonthCurrent, $lte: endOfMonthCurrent },
+        status: INVOICE_STATUS.PAID,
+        paidAt: { $gte: currentMonthDateRange.startDate, $lte: currentMonthDateRange.endDate }, // UTILISER paidAt
       },
     },
     { $group: { _id: null, totalAmount: { $sum: '$totalTTC' } } },
   ]);
 
   const criticalStockItemsCountPromise = Product.countDocuments({
-    isService: false,
+    isService: { $ne: true }, // Pour exclure les services
     $expr: { $lte: ['$stockQuantity', '$criticalStockThreshold'] },
   });
 
-  // --- Données pour le graphique des ventes (Ex: 6 derniers mois) ---
-  const salesChartPromises = [];
-  const salesChartLabels = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(now.getMonth() - i); // Utiliser now.getMonth() pour la cohérence
-    const monthName = date.toLocaleString('fr-FR', { month: 'short' }).replace('.', '');
-    salesChartLabels.push(monthName.charAt(0).toUpperCase() + monthName.slice(1));
-
-    const start = new Date(date.getFullYear(), date.getMonth(), 1);
-    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
-
-    salesChartPromises.push(
-      Invoice.aggregate([
-        { $match: { status: 'PAID', updatedAt: { $gte: start, $lte: end } } }, // ou issueDate/paymentDate
-        { $group: { _id: null, total: { $sum: '$totalTTC' } } },
-      ]).then(result => (result.length > 0 ? result[0].total : 0)) // Retourner seulement le total ou 0
-    );
-  }
+  // --- Données pour le graphique des ventes (6 derniers mois) ---
+  const past6MonthsRanges = getPastMonthsDateRanges(6);
+  const salesChartLabels = past6MonthsRanges.map(r => r.label);
+  const salesChartPromises = past6MonthsRanges.map(range =>
+    Invoice.aggregate([
+      { $match: { status: INVOICE_STATUS.PAID, paidAt: { $gte: range.start, $lte: range.end } } }, // UTILISER paidAt
+      { $group: { _id: null, total: { $sum: '$totalTTC' } } },
+    ]).then(result => (result.length > 0 ? result[0].total : 0))
+  );
 
   // --- Données pour le graphique des rôles utilisateurs ---
   const userRolesAggregationPromise = User.aggregate([
     { $group: { _id: '$role', count: { $sum: 1 } } },
-    { $sort: { _id: 1 } },
+    { $project: { roleName: '$_id', count: 1, _id: 0 } }, // Renommer _id pour plus de clarté
+    { $sort: { count: -1 } }, // Trier par nombre décroissant
   ]);
 
   // --- Flux d'activité récente ---
   const recentActivitiesPromise = SecurityLog.find()
     .sort({ timestamp: -1 })
-    .limit(5) // Limiter à 5 pour le dashboard
-    .populate('user', 'username'); // Populer 'user' au lieu de 'userId' si votre modèle SecurityLog a une ref 'user'
+    .limit(7) // Un peu plus pour une liste
+    .populate('user', 'username email avatarUrl'); // Populer avec plus d'infos si utile
 
-  // Exécuter toutes les promesses en parallèle
-  const [
-    totalUsers,
-    pendingInvoicesCount,
-    monthlyRevenueResult,
-    criticalStockItemsCount,
-    salesDataForChart, // Sera un tableau de totaux mensuels
-    userRolesAggregation,
-    recentActivities,
-  ] = await Promise.all([
+  // Exécuter toutes les promesses
+  // Utiliser Promise.allSettled pour obtenir des résultats même si certaines promesses échouent (plus robuste pour un dashboard)
+  const results = await Promise.allSettled([
     totalUsersPromise,
     pendingInvoicesCountPromise,
     monthlyRevenuePromise,
     criticalStockItemsCountPromise,
-    Promise.all(salesChartPromises), // Exécuter toutes les promesses de ventes
+    Promise.all(salesChartPromises), // Ceci est déjà un Promise.all, donc il échouera si une des requêtes de vente échoue
     userRolesAggregationPromise,
     recentActivitiesPromise,
   ]);
 
+  // Fonction helper pour extraire la valeur de Promise.allSettled
+  const getValue = (result, defaultValue = 0) => result.status === 'fulfilled' ? result.value : defaultValue;
+
+  const totalUsers = getValue(results[0], 0);
+  const pendingInvoicesCount = getValue(results[1], 0);
+  const monthlyRevenueResult = getValue(results[2], [{ totalAmount: 0 }]); // Agrégation retourne un tableau
+  const criticalStockItemsCount = getValue(results[3], 0);
+  const salesDataForChart = getValue(results[4], salesChartLabels.map(() => 0)); // Tableau de 0 si échec
+  const userRolesAggregation = getValue(results[5], []);
+  const recentActivities = getValue(results[6], []);
+
+
   const monthlyRevenue = monthlyRevenueResult.length > 0 ? monthlyRevenueResult[0].totalAmount : 0;
 
+  // Préparer la réponse
   const summaryCards = {
-    totalUsers: { value: totalUsers, isLoading: false, /* trend et trendDirection à calculer si besoin */ },
-    pendingInvoices: { value: pendingInvoicesCount, isLoading: false },
-    monthlyRevenue: { value: parseFloat(monthlyRevenue.toFixed(2)), unit: '€', isLoading: false },
-    criticalStockItems: { value: criticalStockItemsCount, isLoading: false },
+    totalUsers: { value: totalUsers },
+    pendingInvoices: { value: pendingInvoicesCount },
+    monthlyRevenue: { value: parseFloat(monthlyRevenue.toFixed(2)), unit: '€' }, // Assumer EUR
+    criticalStockItems: { value: criticalStockItemsCount },
   };
 
   const salesChartData = {
     labels: salesChartLabels,
     datasets: [{
-      label: 'Revenu (€)',
+      label: 'Revenu Mensuel (€)',
       data: salesDataForChart,
-      borderColor: 'rgb(75, 192, 192)',
-      backgroundColor: 'rgba(75, 192, 192, 0.2)',
+      borderColor: 'rgb(54, 162, 235)',
+      backgroundColor: 'rgba(54, 162, 235, 0.3)',
       fill: true,
-      tension: 0.3,
+      tension: 0.4,
     }],
   };
 
+  const roleColors = { ADMIN: '#FF6384', MANAGER: '#36A2EB', ACCOUNTANT: '#FFCE56', USER: '#4BC0C0', default: '#9966FF' };
   const userRolesChartData = {
-    labels: userRolesAggregation.map(roleGroup => (roleGroup._id ? (roleGroup._id.charAt(0).toUpperCase() + roleGroup._id.slice(1).toLowerCase()) : 'Non Défini')),
+    labels: userRolesAggregation.map(roleGroup => (roleGroup.roleName ? (roleGroup.roleName.charAt(0).toUpperCase() + roleGroup.roleName.slice(1).toLowerCase()) : 'Non Défini')),
     datasets: [{
       label: 'Répartition des Rôles',
       data: userRolesAggregation.map(roleGroup => roleGroup.count),
-      backgroundColor: [
-        'rgba(255, 99, 132, 0.7)',  // ADMIN
-        'rgba(54, 162, 235, 0.7)',  // MANAGER
-        'rgba(255, 206, 86, 0.7)',  // ACCOUNTANT
-        'rgba(75, 192, 192, 0.7)',  // USER (si vous l'ajoutez)
-        'rgba(153, 102, 255, 0.7)', // Autre couleur
-      ],
+      backgroundColor: userRolesAggregation.map(roleGroup => roleColors[roleGroup.roleName] || roleColors.default),
+      hoverOffset: 4,
     }],
   };
 
   res.status(200).json({
     success: true,
-    data: { // Le frontend s'attend à cette structure si on se base sur l'exemple précédent
-        summaryCards,
-        salesChartData,
-        userRolesChartData,
-        recentActivities,
+    data: {
+      summaryCards,
+      salesChartData,
+      userRolesChartData,
+      recentActivities,
     }
   });
 });
@@ -144,78 +148,65 @@ exports.getAdminDashboardStats = asyncHandler(async (req, res, next) => {
 // @route   GET /api/admin/security-logs
 // @access  Private/Admin
 exports.getSecurityLogs = asyncHandler(async (req, res, next) => {
-  // La requête de base pour le comptage total
-  const baseQueryForCount = SecurityLog.find();
-  const countFeatures = new APIFeatures(baseQueryForCount, req.query)
-    .filter()
-    .search(['details', 'action', 'usernameAttempt', 'ipAddress']); // 'message' et 'targetResource' étaient des exemples
-  const totalLogs = await countFeatures.count();
+  const defaultSort = '-timestamp'; // Tri par défaut
+  const query = SecurityLog.find().populate('user', 'username email avatarUrl');
 
-
-  // La requête pour récupérer les données paginées et triées
-  const mainQuery = SecurityLog.find().populate('user', 'username email'); // 'userId' devient 'user' après populate
-  const features = new APIFeatures(mainQuery, req.query)
+  const features = new APIFeatures(query, req.query)
     .filter()
-    .search(['details', 'action', 'usernameAttempt', 'ipAddress'])
-    .sort()
+    .search(['action', 'ipAddress', 'details', 'user.username', 'user.email']) // Champs de recherche étendus
+    .sort(defaultSort) // Laisser APIFeatures gérer le tri par défaut
     .limitFields()
     .paginate();
 
-  // Tri par défaut si non spécifié
-  if (!req.query.sort) {
-    features.mongooseQuery = features.mongooseQuery.sort('-timestamp');
-  }
-
   const logs = await features.mongooseQuery;
-  const limit = parseInt(req.query.limit, 10) || 25; // Default limit
-  const page = parseInt(req.query.page, 10) || 1; // Default page
+
+  // Pour le comptage total, appliquer les mêmes filtres et recherches
+  const countQuery = SecurityLog.find();
+  const countFeatures = new APIFeatures(countQuery, req.query)
+    .filter()
+    .search(['action', 'ipAddress', 'details', 'user.username', 'user.email']);
+
+  const totalLogs = await countFeatures.count();
 
   res.status(200).json({
     success: true,
-    countOnPage: logs.length, // Nombre de logs sur la page actuelle
-    totalLogs: totalLogs,   // Nombre total de logs correspondant aux filtres
-    pagination: {
-      currentPage: page,
-      limit: limit,
-      totalPages: Math.ceil(totalLogs / limit) || 1,
-    },
+    countOnPage: logs.length,
+    totalLogs: totalLogs,
+    pagination: features.paginationDetails, // APIFeatures devrait fournir cela
     data: logs,
   });
 });
 
 
-// @desc    Récupérer des données pour les graphiques du tableau de bord admin
+// @desc    (Optionnel) Récupérer des données spécifiques pour des graphiques si nécessaire
 // @route   GET /api/admin/charts-data
 // @access  Private/Admin
-// NOTE: Cette route est redondante si getAdminDashboardStats retourne déjà toutes les données.
-// Si vous la gardez, assurez-vous que sa logique est distincte et nécessaire.
 exports.getAdminChartsData = asyncHandler(async (req, res, next) => {
-    console.log('Contrôleur getAdminChartsData atteint !');
-    // --- Exemple 1: Ventes par mois sur les 12 derniers mois ---
-    // (La logique est déjà dans getAdminDashboardStats, à factoriser si besoin)
-    // Pour l'instant, on renvoie des données vides pour éviter la duplication ou une erreur
-    const salesByMonth = { labels: [], datasets: [{ data: [] }] };
+  // Si cette route est maintenue, elle devrait avoir une logique distincte
+  // Par exemple, des agrégations plus complexes ou des données non incluses dans le dashboard principal.
 
-    // --- Exemple 2: Répartition des statuts des devis ---
-    const quoteStatusDistribution = await Quote.aggregate([
-        { $group: { _id: '$status', count: { $sum: 1 } } },
-        { $project: { _id: 0, status: '$_id', count: '$count' } }
-    ]);
+  // Exemple: Répartition des statuts des devis
+  const quoteStatusColors = { DRAFT: '#6c757d', SENT: '#0dcaf0', ACCEPTED: '#198754', REJECTED: '#dc3545', EXPIRED: '#ffc107' };
+  const quoteStatusDistributionResult = await Quote.aggregate([
+    { $group: { _id: '$status', count: { $sum: 1 } } },
+    { $project: { status: '$_id', count: 1, _id: 0 } },
+    { $sort: { count: -1 } }
+  ]);
 
-    // --- Exemple 3: Top 5 des produits les plus vendus ---
-    // (Logique déjà dans getAdminDashboardStats, à factoriser)
-    const topSellingProducts = [];
+  const quoteStatusDistribution = {
+    labels: quoteStatusDistributionResult.map(item => item.status),
+    datasets: [{
+      label: 'Statuts des Devis',
+      data: quoteStatusDistributionResult.map(item => item.count),
+      backgroundColor: quoteStatusDistributionResult.map(item => quoteStatusColors[item.status] || '#adb5bd'),
+    }]
+  };
 
-
-    res.status(200).json({
-        success: true,
-        data: {
-            salesByMonth,
-            quoteStatusDistribution,
-            topSellingProducts,
-        }
-    });
+  res.status(200).json({
+    success: true,
+    data: {
+      quoteStatusDistribution,
+      // ... autres données de graphiques spécifiques ...
+    }
+  });
 });
-
-// Il est important que le nom des fonctions exportées ici corresponde
-// à ce qui est importé dans admin.routes.js

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Row, Col } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Row, Col, Card } from 'react-bootstrap'; // Ajout de l'import Card
+//import { Link } from 'react-router-dom';
 
 import PageContainer from '../../components/layout/PageContainer';
 import StatCard from '../../components/dashboard/StatCard';
@@ -8,106 +9,138 @@ import RecentActivityFeed from '../../components/dashboard/RecentActivityFeed';
 import QuickAccessPanel from '../../components/dashboard/QuickAccessPanel';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import AlertMessage from '../../components/common/AlertMessage';
-import AppButton from '../../components/common/AppButton'; // ✅ Import manquant
+import AppButton from '../../components/common/AppButton';
+import Icon from '../../components/common/Icon';
 
 import { getAdminDashboardData } from '../../api/admin.api.js';
 
 const AdminDashboardPage = () => {
-  const [summaryStats, setSummaryStats] = useState({
-    totalUsers: { value: 0, isLoading: true },
-    pendingInvoices: { value: 0, isLoading: true },
-    monthlyRevenue: { value: 0, unit: '€', isLoading: true },
-    criticalStockItems: { value: 0, isLoading: true },
-  });
+  const currency = 'XOF';
+  const currencyFormatter = useMemo(() => new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }), [currency]);
 
+  const initialStatsState = {
+    totalUsers: { value: 0, isLoading: true, trend: null, trendDirection: null },
+    pendingInvoices: { value: 0, isLoading: true, trend: null, trendDirection: null },
+    monthlyRevenue: { value: 0, unit: currency, isLoading: true, trend: null, trendDirection: null },
+    criticalStockItems: { value: 0, isLoading: true, trend: null, trendDirection: null },
+  };
+
+  const [summaryStats, setSummaryStats] = useState(initialStatsState);
   const [salesChartData, setSalesChartData] = useState({ labels: [], datasets: [] });
   const [userRolesChartData, setUserRolesChartData] = useState({ labels: [], datasets: [] });
   const [recentActivities, setRecentActivities] = useState([]);
-
-  const [isLoadingPage, setIsLoadingPage] = useState(true);
-  const [errorPage, setErrorPage] = useState(null);
+  const [pageStatus, setPageStatus] = useState('loading');
+  const [pageError, setPageError] = useState(null);
 
   const quickAccessItems = [
-    { id: 'manage-users', label: 'Gérer les Utilisateurs', iconName: 'BsPeopleFill', linkTo: '/admin/user-management', variant: 'primary' },
-    { id: 'view-security-logs', label: 'Journaux de Sécurité', iconName: 'BsShieldLockFill', linkTo: '/admin/security-logs', variant: 'danger' },
-    { id: 'app-settings', label: 'Paramètres Application', iconName: 'BsGearWideConnected', linkTo: '/admin/settings', variant: 'info' },
-    { id: 'create-invoice', label: 'Nouvelle Facture', iconName: 'BsFileEarmarkPlusFill', linkTo: '/invoices/new', variant: 'success' },
+    { id: 'manage-users', label: 'Utilisateurs', iconName: 'BsPeopleFill', linkTo: '/admin/users', variant: 'primary' },
+    { id: 'view-logs', label: 'Journaux Sécurité', iconName: 'BsShieldLockFill', linkTo: '/admin/security-logs', variant: 'info' },
+    { id: 'new-invoice', label: 'Nouvelle Facture', iconName: 'BsFileEarmarkPlusFill', linkTo: '/invoices/new', variant: 'success' },
+    { id: 'products', label: 'Produits', iconName: 'BsBoxSeam', linkTo: '/products', variant: 'warning'},
   ];
 
-  const salesChartOptions = {
+  const salesChartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      title: { display: true, text: 'Performance Financière' },
+      legend: { display: true, position: 'top' },
+      title: { display: true, text: 'Performance Financière (6 derniers mois)', font: { size: 16 } },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            let label = context.dataset.label || '';
+            if (label) label += ': ';
+            if (context.parsed.y !== null) label += currencyFormatter.format(context.parsed.y);
+            return label;
+          }
+        }
+      }
     },
     scales: {
       y: {
-        ticks: {
-          callback: value => `${(value / 1000).toFixed(1)}k ${summaryStats.monthlyRevenue.unit || '€'}`,
-        },
+        beginAtZero: true,
+        ticks: { callback: (value) => currencyFormatter.format(value) },
       },
     },
-  };
+  }), [currencyFormatter]);
 
-  const userRolesChartOptions = {
+  const userRolesChartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      title: { display: true, text: 'Utilisateurs par Rôle' },
-      legend: { position: 'bottom' },
+      title: { display: true, text: 'Utilisateurs par Rôle', font: {size: 16} },
+      legend: { position: 'right' },
     },
-  };
+  }), []);
 
   const fetchDashboardData = useCallback(async () => {
-    setIsLoadingPage(true);
-    setErrorPage(null);
+    setPageStatus('loading');
+    setPageError(null);
+    setSummaryStats(prev => Object.fromEntries(
+      Object.entries(prev).map(([key, stat]) => [key, { ...stat, isLoading: true }])
+    ));
 
     try {
-      const dashboardData = await getAdminDashboardData();
+      const responseData = await getAdminDashboardData();
 
       setSummaryStats({
-        totalUsers: { ...dashboardData?.summaryCards?.totalUsers, isLoading: false },
-        pendingInvoices: { ...dashboardData?.summaryCards?.pendingInvoices, isLoading: false },
+        totalUsers: { ...(responseData?.summaryCards?.totalUsers || { value: 0 }), isLoading: false },
+        pendingInvoices: { ...(responseData?.summaryCards?.pendingInvoices || { value: 0 }), isLoading: false },
         monthlyRevenue: {
-          ...dashboardData?.summaryCards?.monthlyRevenue,
-          unit: '€',
+          ...(responseData?.summaryCards?.monthlyRevenue || { value: 0 }),
+          unit: responseData?.summaryCards?.monthlyRevenue?.unit || currency,
           isLoading: false,
         },
-        criticalStockItems: { ...dashboardData?.summaryCards?.criticalStockItems, isLoading: false },
+        criticalStockItems: { ...(responseData?.summaryCards?.criticalStockItems || { value: 0 }), isLoading: false },
       });
 
-      setSalesChartData(dashboardData?.salesChartData || { labels: [], datasets: [] });
-      setUserRolesChartData(dashboardData?.userRolesChartData || { labels: [], datasets: [] });
-      setRecentActivities(dashboardData?.recentActivities || []);
-    } catch (error) {
-      console.error("Erreur lors du chargement du dashboard admin :", error);
-      setErrorPage(error.message || "Erreur lors du chargement des données.");
+      setSalesChartData(responseData?.salesChartData || { labels: [], datasets: [] });
+      setUserRolesChartData(responseData?.userRolesChartData || { labels: [], datasets: [] });
+      setRecentActivities(responseData?.recentActivities || []);
+      setPageStatus('succeeded');
+    } catch (err) {
+      console.error("Erreur chargement dashboard admin :", err);
+      const errorMessage = err?.message || err?.data?.message || "Erreur inconnue lors du chargement des données.";
+      setPageError(errorMessage);
+      setPageStatus('failed');
       setSummaryStats(prev =>
-        Object.fromEntries(Object.entries(prev).map(([key, stat]) => [
-          key,
-          { ...stat, isLoading: false, value: 'Erreur' },
-        ]))
+        Object.fromEntries(
+          Object.entries(prev).map(([key, stat]) => [
+            key,
+            { ...stat, isLoading: false, value: (key === 'monthlyRevenue' ? 'N/A' : 0) },
+          ])
+        )
       );
-    } finally {
-      setIsLoadingPage(false);
     }
-  }, []);
+  }, [currency]);
 
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  if (isLoadingPage && !errorPage) {
+  if (pageStatus === 'loading') {
     return (
-      <PageContainer title="Tableau de Bord Administrateur">
-        <LoadingSpinner message="Chargement du tableau de bord..." />
+      <PageContainer title="Tableau de Bord Administrateur" fluid>
+        <LoadingSpinner fullPage message="Chargement du tableau de bord..." />
       </PageContainer>
     );
   }
 
-  if (errorPage) {
+  if (pageStatus === 'failed') {
     return (
-      <PageContainer title="Tableau de Bord Administrateur">
-        <AlertMessage variant="danger">{errorPage}</AlertMessage>
-        <AppButton onClick={fetchDashboardData} className="mt-3">
-          Réessayer
-        </AppButton>
+      <PageContainer title="Tableau de Bord Administrateur" fluid>
+        <AlertMessage variant="danger" className="text-center py-4">
+            <h4><Icon name="BsExclamationTriangleFill" className="me-2"/> Impossible de charger le tableau de bord</h4>
+            <p className="mb-2">{pageError}</p>
+            <AppButton onClick={fetchDashboardData} variant="primary" size="sm">
+                <Icon name="BsArrowClockwise" className="me-1"/> Réessayer
+            </AppButton>
+        </AlertMessage>
       </PageContainer>
     );
   }
@@ -115,96 +148,119 @@ const AdminDashboardPage = () => {
   return (
     <PageContainer title="Tableau de Bord Administrateur" fluid>
       {/* Cartes de Statistiques */}
-      <Row className="g-4 mb-4">
-        <Col xs={12} sm={6} lg={3}>
+      <Row className="g-3 mb-4">
+        <Col xs={12} sm={6} xl={3}>
           <StatCard
             title="Utilisateurs Totaux"
-            value={summaryStats.totalUsers.value}
+            value={summaryStats.totalUsers.value?.toLocaleString('fr-FR') || '0'}
             isLoading={summaryStats.totalUsers.isLoading}
-            iconName="BsPeopleFill"
-            iconColor="var(--bs-primary)"
-            iconBgColor="rgba(var(--bs-primary-rgb), 0.1)"
+            icon={<Icon name="BsPeopleFill" size="2.2em" />}
+            iconColorSet={{icon: "var(--bs-primary)", bg: "rgba(var(--bs-primary-rgb), 0.1)" }}
             trend={summaryStats.totalUsers.trend}
             trendDirection={summaryStats.totalUsers.trendDirection}
-            linkTo="/admin/user-management"
+            linkTo="/admin/users"
             footerText="Gérer les utilisateurs"
           />
         </Col>
-        <Col xs={12} sm={6} lg={3}>
+        <Col xs={12} sm={6} xl={3}>
           <StatCard
             title="Factures en Attente"
-            value={summaryStats.pendingInvoices.value}
+            value={summaryStats.pendingInvoices.value?.toLocaleString('fr-FR') || '0'}
             isLoading={summaryStats.pendingInvoices.isLoading}
-            iconName="BsFileEarmarkMedicalFill"
-            iconColor="var(--bs-warning)"
-            iconBgColor="rgba(var(--bs-warning-rgb), 0.15)"
-            trend={summaryStats.pendingInvoices.trend}
-            trendDirection={summaryStats.pendingInvoices.trendDirection}
+            icon={<Icon name="BsFileEarmarkMedicalFill" size="2.2em" />}
+            iconColorSet={{icon: "var(--bs-warning)", bg: "rgba(var(--bs-warning-rgb), 0.15)"}}
             linkTo="/invoices?status=UNPAID&status=OVERDUE"
             footerText="Voir les factures"
           />
         </Col>
-        <Col xs={12} sm={6} lg={3}>
+        <Col xs={12} sm={6} xl={3}>
           <StatCard
             title="Revenu Mensuel"
-            value={summaryStats.monthlyRevenue.value?.toLocaleString('fr-FR') || 'N/A'}
-            unit={summaryStats.monthlyRevenue.unit}
+            value={
+              summaryStats.monthlyRevenue.isLoading ? 'Chargement...' :
+              (typeof summaryStats.monthlyRevenue.value === 'number'
+                ? currencyFormatter.format(summaryStats.monthlyRevenue.value)
+                : (summaryStats.monthlyRevenue.value || 'N/A'))
+            }
             isLoading={summaryStats.monthlyRevenue.isLoading}
-            iconName="BsGraphUpArrow"
-            iconColor="var(--bs-success)"
-            iconBgColor="rgba(var(--bs-success-rgb), 0.1)"
-            trend={summaryStats.monthlyRevenue.trend}
-            trendDirection={summaryStats.monthlyRevenue.trendDirection}
+            icon={<Icon name="BsGraphUpArrow" size="2.2em" />}
+            iconColorSet={{icon: "var(--bs-success)", bg: "rgba(var(--bs-success-rgb), 0.1)"}}
           />
         </Col>
-        <Col xs={12} sm={6} lg={3}>
+        <Col xs={12} sm={6} xl={3}>
           <StatCard
             title="Stock Critique"
-            value={summaryStats.criticalStockItems.value}
+            value={summaryStats.criticalStockItems.value?.toLocaleString('fr-FR') || '0'}
             isLoading={summaryStats.criticalStockItems.isLoading}
-            iconName="BsArchiveFill"
-            iconColor="var(--bs-danger)"
-            iconBgColor="rgba(var(--bs-danger-rgb), 0.1)"
-            trend={summaryStats.criticalStockItems.trend}
-            trendDirection={summaryStats.criticalStockItems.trendDirection}
-            linkTo="/stock?filter=critical"
+            icon={<Icon name="BsArchiveFill" size="2.2em" />}
+            iconColorSet={{icon: "var(--bs-danger)", bg: "rgba(var(--bs-danger-rgb), 0.1)"}}
+            linkTo="/products?filter=critical"
             footerText="Gérer le stock"
           />
         </Col>
       </Row>
 
-      {/* Graphiques */}
-      <Row className="g-4 mb-4">
-        <Col lg={8} md={12}>
-          <ChartComponent
-            type="line"
-            data={salesChartData}
-            options={salesChartOptions}
-            title="Vue d’Ensemble des Finances"
-            isLoading={summaryStats.monthlyRevenue.isLoading}
-          />
+      <Row className="g-3 mb-4">
+        <Col lg={7} md={12}>
+          <Card className="shadow-sm h-100">
+            <Card.Body>
+              {summaryStats.monthlyRevenue.isLoading && salesChartData.datasets.length === 0 ? (
+                <div className="d-flex justify-content-center align-items-center h-100">
+                  <LoadingSpinner />
+                </div>
+              ) : salesChartData.datasets?.[0]?.data?.length > 0 ? (
+                <ChartComponent 
+                  type="line" 
+                  data={salesChartData} 
+                  options={salesChartOptions} 
+                  height={320} 
+                />
+              ) : (
+                <div className="text-center p-5 text-muted">
+                  Aucune donnée de vente à afficher pour cette période.
+                </div>
+              )}
+            </Card.Body>
+          </Card>
         </Col>
-        <Col lg={4} md={12}>
-          <ChartComponent
-            type="doughnut"
-            data={userRolesChartData}
-            options={userRolesChartOptions}
-            title="Utilisateurs par Rôle"
-            isLoading={summaryStats.totalUsers.isLoading}
-          />
+        <Col lg={5} md={12}>
+          <Card className="shadow-sm h-100">
+            <Card.Body>
+              {summaryStats.totalUsers.isLoading && userRolesChartData.datasets.length === 0 ? (
+                <div className="d-flex justify-content-center align-items-center h-100">
+                  <LoadingSpinner />
+                </div>
+              ) : userRolesChartData.datasets?.[0]?.data?.length > 0 ? (
+                <ChartComponent 
+                  type="doughnut" 
+                  data={userRolesChartData} 
+                  options={userRolesChartOptions} 
+                  height={320} 
+                />
+              ) : (
+                <div className="text-center p-5 text-muted">
+                  Aucune donnée de rôle utilisateur à afficher.
+                </div>
+              )}
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
-      {/* Activité & Accès Rapide */}
-      <Row className="g-4">
+      <Row className="g-3">
         <Col lg={7} md={12}>
           <RecentActivityFeed
+            title="Activité Récente du Système"
             items={recentActivities}
-            isLoading={isLoadingPage}
+            isLoading={pageStatus === 'loading'}
+            viewAllLink="/admin/security-logs"
           />
         </Col>
         <Col lg={5} md={12}>
-          <QuickAccessPanel items={quickAccessItems} />
+          <QuickAccessPanel 
+            title="Accès Rapide" 
+            items={quickAccessItems} 
+          />
         </Col>
       </Row>
     </PageContainer>

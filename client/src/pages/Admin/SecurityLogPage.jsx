@@ -11,12 +11,15 @@ import {
 
 import DataTable from '../../components/common/DataTable/DataTable';
 import TablePagination from '../../components/common/DataTable/TablePagination';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+//import LoadingSpinner from '../../components/common/LoadingSpinner';
 import AlertMessage from '../../components/common/AlertMessage';
-import PageHeader from '../../components/common/PageHeader';
-import { Form, Row, Col, Button } from 'react-bootstrap';
+import PageContainer from '../../components/layout/PageContainer';
+import { Form, Row, Col, Card, Image } from 'react-bootstrap';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Icon from '../../components/common/Icon';
+import AppButton from '../../components/common/AppButton';
+import defaultAvatar from '../../assets/images/default-avatar.png';
 
 const SecurityLogPage = () => {
   const dispatch = useDispatch();
@@ -30,7 +33,7 @@ const SecurityLogPage = () => {
     limit: 25,
     sort: '-timestamp',
     action: '',
-    username: '',
+    username: '', // Simplifié pour correspondre à l'API
     ipAddress: '',
   });
 
@@ -41,24 +44,18 @@ const SecurityLogPage = () => {
   });
 
   const fetchData = useCallback(() => {
-    const activeFilters = {};
-    for (const key in queryParams) {
-      if (queryParams[key]) {
-        activeFilters[key] = queryParams[key];
-      }
-    }
+    const activeFilters = Object.fromEntries(
+      Object.entries(queryParams).filter(([_, value]) => value !== '' && value !== null && value !== undefined)
+    );
     dispatch(fetchSecurityLogs(activeFilters));
   }, [dispatch, queryParams]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    if (status === 'idle' && error) {
+    return () => {
       dispatch(clearSecurityLogError());
-    }
-  }, [status, error, dispatch]);
+    };
+  }, [dispatch, fetchData]);
 
   const handlePageChange = (newPage) => {
     setQueryParams(prev => ({ ...prev, page: newPage }));
@@ -69,7 +66,7 @@ const SecurityLogPage = () => {
     setLocalFilters(prev => ({ ...prev, [name]: value }));
   };
 
-  const applyLocalFilters = () => {
+  const applyFilters = () => {
     setQueryParams(prev => ({
       ...prev,
       ...localFilters,
@@ -77,7 +74,7 @@ const SecurityLogPage = () => {
     }));
   };
 
-  const resetLocalFilters = () => {
+  const resetFilters = () => {
     const defaultFilters = { action: '', username: '', ipAddress: '' };
     setLocalFilters(defaultFilters);
     setQueryParams(prev => ({
@@ -92,155 +89,176 @@ const SecurityLogPage = () => {
       Header: 'Date & Heure',
       accessor: 'timestamp',
       sortable: true,
-      Cell: ({ value }) => format(new Date(value), 'dd/MM/yyyy HH:mm:ss', { locale: fr }),
+      Cell: ({ value }) => value ? format(new Date(value), 'dd/MM/yyyy HH:mm:ss', { locale: fr }) : '-',
       width: 180,
     },
     {
       Header: 'Action',
       accessor: 'action',
       sortable: true,
+      Cell: ({ value }) => (
+        <span className="badge bg-primary">
+          {value}
+        </span>
+      ),
     },
     {
       Header: 'Utilisateur',
       accessor: 'user',
-      sortable: false,
-      Cell: ({ value }) => value?.username || 'Système/Anonyme',
-    },
-    {
-      Header: 'Tentative (si échec login)',
-      accessor: 'usernameAttempt',
-      Cell: ({ value }) => value || '-',
+      Cell: ({ value }) => (
+        <div className="d-flex align-items-center">
+          <Image 
+            src={value?.avatarUrl || defaultAvatar} 
+            roundedCircle 
+            width="30" 
+            height="30" 
+            className="me-2" 
+            alt={`Avatar de ${value?.username || 'utilisateur'}`}
+          />
+          <span>{value?.username || 'Système/Anonyme'}</span>
+        </div>
+      ),
     },
     {
       Header: 'Adresse IP',
       accessor: 'ipAddress',
-      sortable: true,
+      Cell: ({ value }) => <code>{value}</code>,
     },
     {
       Header: 'Détails',
       accessor: 'details',
+      minWidth: 250,
       Cell: ({ value }) => {
         if (!value) return '-';
-        const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+        const displayValue = typeof value === 'object' 
+          ? JSON.stringify(value, null, 2) 
+          : String(value);
+        
         return (
-          <span
-            title={displayValue}
-            style={{
-              display: 'block',
-              maxWidth: '300px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
+          <div className="text-truncate" title={displayValue}>
             {displayValue}
-          </span>
+          </div>
         );
       },
-      minWidth: 250,
     },
   ], []);
 
   const isLoading = status === 'loading';
 
-  if (isLoading && !logs.length) {
-    return <LoadingSpinner fullPage />;
-  }
-
   return (
-    <div className="container-fluid mt-4 security-log-page">
-      <PageHeader
-        title="Journaux de Sécurité"
-        breadcrumbs={[
-          { label: 'Admin', path: '/admin/dashboard-stats' },
-          { label: 'Journaux de Sécurité', isActive: true },
-        ]}
-      />
-
+    <PageContainer
+      title="Journaux de Sécurité"
+      breadcrumbs={[
+        { label: 'Admin', path: '/admin/dashboard' },
+        { label: 'Journaux de Sécurité', isActive: true },
+      ]}
+      fluid
+    >
       {error && (
-        <AlertMessage
-          variant="danger"
-          onClose={() => dispatch(clearSecurityLogError())}
-          dismissible
-        >
-          Erreur de chargement des journaux : {typeof error === 'string' ? error : error.message || JSON.stringify(error)}
+        <AlertMessage variant="danger" onClose={() => dispatch(clearSecurityLogError())} dismissible>
+          {error.message || "Erreur lors du chargement des journaux"}
         </AlertMessage>
       )}
 
       {/* Filtres */}
-      <div className="bg-light p-3 mb-3 border rounded">
-        <Form onSubmit={(e) => { e.preventDefault(); applyLocalFilters(); }}>
-          <Row className="g-3 align-items-end">
-            <Col md={3}>
-              <Form.Group controlId="filterAction">
-                <Form.Label>Action</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="action"
-                  value={localFilters.action}
-                  onChange={handleFilterChange}
-                  placeholder="Ex: LOGIN_SUCCESS"
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="filterUsername">
-                <Form.Label>Nom d'utilisateur</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="username"
-                  value={localFilters.username}
-                  onChange={handleFilterChange}
-                  placeholder="Nom exact ou partiel"
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="filterIpAddress">
-                <Form.Label>Adresse IP</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="ipAddress"
-                  value={localFilters.ipAddress}
-                  onChange={handleFilterChange}
-                  placeholder="Ex: 192.168.1.1"
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3} className="d-flex gap-2">
-              <Button variant="primary" type="submit" disabled={isLoading}>
-                Filtrer
-              </Button>
-              <Button variant="outline-secondary" type="button" onClick={resetLocalFilters} disabled={isLoading}>
-                Réinitialiser
-              </Button>
-            </Col>
-          </Row>
-        </Form>
-      </div>
+      <Card className="mb-4 shadow-sm">
+        <Card.Body>
+          <Form>
+            <Row className="g-3 align-items-end">
+              <Col md={6} lg={3}>
+                <Form.Group controlId="actionFilter">
+                  <Form.Label>Action</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="action"
+                    value={localFilters.action}
+                    onChange={handleFilterChange}
+                    placeholder="Ex: LOGIN_SUCCESS"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6} lg={3}>
+                <Form.Group controlId="usernameFilter">
+                  <Form.Label>Nom d'utilisateur</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="username"
+                    value={localFilters.username}
+                    onChange={handleFilterChange}
+                    placeholder="Rechercher par nom"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6} lg={3}>
+                <Form.Group controlId="ipFilter">
+                  <Form.Label>Adresse IP</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="ipAddress"
+                    value={localFilters.ipAddress}
+                    onChange={handleFilterChange}
+                    placeholder="Ex: 192.168.1.1"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6} lg={3} className="d-flex gap-2">
+                <AppButton 
+                  variant="primary" 
+                  onClick={applyFilters} 
+                  disabled={isLoading}
+                >
+                  <Icon name="BsSearch" className="me-1" />
+                  Filtrer
+                </AppButton>
+                <AppButton 
+                  variant="outline-secondary" 
+                  onClick={resetFilters} 
+                  disabled={isLoading}
+                >
+                  <Icon name="BsArrowClockwise" className="me-1" />
+                  Réinitialiser
+                </AppButton>
+              </Col>
+            </Row>
+          </Form>
+        </Card.Body>
+      </Card>
 
-      {/* Table */}
-      {isLoading && <p>Chargement des journaux...</p>}
-      <DataTable
-        columns={columns}
-        data={logs}
-        isLoading={isLoading}
-      />
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          onPageChange={handlePageChange}
-        />
-      )}
-
-      {!isLoading && logs.length === 0 && (
-        <AlertMessage variant="info" className="mt-3">
-          Aucun journal de sécurité ne correspond à vos critères.
-        </AlertMessage>
-      )}
-    </div>
+      {/* Tableau des journaux */}
+      <Card className="shadow-sm">
+        <Card.Header className="d-flex justify-content-between align-items-center">
+          <Card.Title as="h5" className="mb-0">
+            Événements de sécurité
+            {pagination?.totalItems !== undefined && (
+              <span className="text-muted fs-6 ms-2">
+                ({pagination.totalItems} résultat{pagination.totalItems !== 1 ? 's' : ''})
+              </span>
+            )}
+          </Card.Title>
+        </Card.Header>
+        
+        <Card.Body className="p-0">
+          <DataTable
+            columns={columns}
+            data={logs}
+            isLoading={isLoading}
+            emptyMessage="Aucun événement de sécurité trouvé"
+          />
+        </Card.Body>
+        
+        {pagination && pagination.totalPages > 1 && (
+          <Card.Footer className="d-flex justify-content-center">
+            <TablePagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              itemsPerPage={pagination.limit}
+              onPageChange={handlePageChange}
+            />
+          </Card.Footer>
+        )}
+      </Card>
+    </PageContainer>
   );
 };
 
