@@ -18,7 +18,7 @@ router.use(protect);
 router.use(authorize('ADMIN'));
 
 // --- Routes pour les Statistiques et le Tableau de Bord ---
-router.get('/dashboard/stats', getAdminDashboardStats); // CORRIGÉ ICI
+router.get('/dashboard-stats', getAdminDashboardStats);
 router.get('/charts-data', getAdminChartsData); // Voir note sur la redondance potentielle
 
 // --- Routes pour les Journaux de Sécurité ---
